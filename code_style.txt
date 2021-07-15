@@ -1,0 +1,31 @@
+Function parameters start with _
+Multiple assignment statements must be aligned at the equal operator
+All indentation must be done with tabs converted to spaces
+There must be NO whitespace before commas
+All commas must be followed by a whitespace
+All opening brackets (non empty) must be followed by a whitespace
+All closing brackets (non empty) must be preceded by a whitespace
+All empty brackets must contain a whitespace
+All operators must have whitespace on both sides
+Folder names must have each word capitalized (even the first one) and each word must be separated by "_" (underscore)
+Class/struct names must be CamelCase
+Constant variables must be UPPERCASE and each word must be separated by "_" (underscore)
+File names, variable names, function names, etc must be lowercase and each word must be separated by "_" (underscore)
+No wildcard imports
+
+
+Sample code :-
+
+Class MyClass
+    def func( self, _param1, _param2, _param3, _param4 ):    (Not "def func(self, param1, param2, param3, param4)")
+        a    = _param1 - 5                                   (Not "a = param1-5")
+        bb   = _param2 - 5                                   (Not "bb = param2-5")
+        ccc  = _param3 - 5                                   (Not "ccc = param3-5")
+        dddd = _param4 - 5                                   (Not "dddd = param4-5")
+
+        sum = ( a * 1 + bb * 2 + ccc * 3 + dddd * 4 )        (Not "(a*1 + bb*2 + ccc*3 + dddd)")
+        lst = [ 1, 2 ]                                       (Not "lst = [1, 2]")
+        tup = ( 1, 2, 3 )                                    (Not "tup = (1, 2)")
+
+my_object = MyClass( )                                       (Not "my_object = MyClass()")
+print( my_object.func( 1, 2, 3, 4 ) )                        (Not "print(my_object.func(1,2,3,4)")
