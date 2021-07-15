@@ -1,0 +1,35 @@
+GUI level - Projects -> Boards -> Columns -> Cards
+Internal/DB level -
+
+Internal structure:
+    Project - Database
+    Boards - Entries (the data) in the boards table along with their uid, the cards list they hold
+    Columns - Tags (Member variable) in the each card table
+    Card - Entries in the cards table along with their uid
+
+
+UID stands for - Unique identifier
+
+Different tables in our database:
+    Boards:
+        Columns this table has:
+            uid - the uid of the board (PRIMARY KEY)
+            info - the misc info of the board (includes the uid) (eg - name, desc, etc)
+            data - the list of uids of contained cards
+
+    Cards:
+        Columns this table has:
+            uid - the uid of the card (PRIMARY KEY)
+            data - the entire data of the card (includes the uid)
+
+    info:
+        Columns this table has:
+            type - can be project, board or card
+            data - in case of project it will store the info of the project (name, desc, etc)
+                   in case of board/card it will store the last uid used
+
+
+GUI level components:
+    Projects - Name, Description, boards
+    Boards - Name, Description, Cards
+    Cards - Name, Description, Column (per board), Color
