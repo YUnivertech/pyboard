@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 .vs/
+User_Projects/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
