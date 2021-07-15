@@ -37,7 +37,6 @@ class DBManager:
     def get_next_card_uid( self ):
         self.cursor.execute( "SELECT `card_last_used_uid` FROM `Info`;" )
         fetched_data  = self.cursor.fetchall( )
-        l =
         next_card_uid = fetched_data[ 0 ][ 0 ] + 1
         consts.dbg( 1, "Class DBManager - function get_next_card_uid - value of next_card_uid:", next_card_uid )
         return next_card_uid
