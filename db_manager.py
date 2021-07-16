@@ -53,8 +53,8 @@ class DBManager:
         self.cursor.execute( "UPDATE `Info` SET `card_last_used_uid` = ?;", ( _card_uid, ) )
         self.conn.commit( )
 
-    def update_project_info( self, _project_data ):
-        self.cursor.execute( "UPDATE `Info` SET `project_data` = ?;", ( _project_data, ) )
+    def update_project_info( self, _project_info ):
+        self.cursor.execute( "UPDATE `Info` SET `project_data` = ?;", ( _project_info, ) )
         self.conn.commit( )
 
     def update_board_info( self, _board_uid, _board_data ):
