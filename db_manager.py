@@ -61,8 +61,8 @@ class DBManager:
         self.cursor.execute( "UPDATE `Boards` SET `info` = ? WHERE `uid` = ?;", ( _board_data, _board_uid ) )
         self.conn.commit( )
 
-    def update_board_data( self, _board_name, _column_name, _column_cards ):
-        self.cursor.execute( "UPDATE `Boards` SET `data` = ? WHERE `uid` = ?;", ( _column_cards, _column_name ) )
+    def update_board_data( self, _board_uid, _board_data ):
+        self.cursor.execute( "UPDATE `Boards` SET `data` = ? WHERE `uid` = ?;", ( _board_data, _board_uid ) )
         self.conn.commit( )
 
     def update_card( self, _card_uid, _card_data ):
