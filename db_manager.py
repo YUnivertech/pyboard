@@ -102,8 +102,8 @@ class DBManager:
         consts.dbg( 1, "Class DBManager - function get_all_boards_info - value of all_boards_info:", all_boards_info )
         return all_boards_info
 
-    def get_board_data( self, _board_name ):
-        self.cursor.execute( "SELECT `data` FROM `Boards` WHERE `uid` = ?;" )
+    def get_board_data( self, _board_uid ):
+        self.cursor.execute( "SELECT `data` FROM `Boards` WHERE `uid` = ?;", ( _board_uid, ) )
         fetched_data = self.cursor.fetchall( )
         board_data   = [ ]
         for i in fetched_data:
