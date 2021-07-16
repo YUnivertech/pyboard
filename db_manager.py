@@ -23,7 +23,7 @@ class DBManager:
         if not db_exists:
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Cards'( 'uid' UNSIGNED BIGINT PRIMARY KEY, 'data' TEXT );" )
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Boards'( 'uid' UNSIGNED BIGINT PRIMARY KEY, 'info' TEXT, 'data' TEXT );" )
-            self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Info'( 'project_data' TEXT, 'board_last_used_uid' UNSIGNED BIGINT, 'card_last_used_uid' UNSIGNED BIGINT );" )
+            self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Info'( 'project_info' TEXT, 'board_last_used_uid' UNSIGNED BIGINT, 'card_last_used_uid' UNSIGNED BIGINT );" )
             self.cursor.execute( "INSERT INTO `Info` ( `board_last_used_uid`, `card_last_used_uid` ) VALUES ( '0', '0' );" )
             self.conn.commit( )
 
@@ -54,7 +54,7 @@ class DBManager:
         self.conn.commit( )
 
     def update_project_info( self, _project_info ):
-        self.cursor.execute( "UPDATE `Info` SET `project_data` = ?;", ( _project_info, ) )
+        self.cursor.execute( "UPDATE `Info` SET `project_info` = ?;", ( _project_info, ) )
         self.conn.commit( )
 
     def update_board_info( self, _board_uid, _board_info ):
@@ -79,7 +79,7 @@ class DBManager:
         self.conn.commit( )
 
     def get_project_info( self ):
-        self.cursor.execute( "SELECT `project_data` FROM `Info`;" )
+        self.cursor.execute( "SELECT `project_info` FROM `Info`;" )
         fetched_data = self.cursor.fetchall( )
         project_info = fetched_data[ 0 ][ 0 ]
         consts.dbg( 1, "Class DBManager - function get_project_info - value of project_info:", project_info )
