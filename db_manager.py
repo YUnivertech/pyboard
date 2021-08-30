@@ -14,7 +14,10 @@ class DBManager:
         self.conn   = None
         self.cursor = None
 
-    def connect( self, _project_name ):
+    def connect( self, _hostname, _username, _password ):
+        pass
+
+    def use_db( self, _project_name ):
         projects    = os.listdir( consts.PROJECTS_FOLDER )
         db_exists   = ( _project_name + ".db" ) in projects
         self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
@@ -415,4 +418,4 @@ class DBManager:
 # Testing
 if __name__ == "__main__":
     db_manager = DBManager()
-    db_manager.connect("test_proj")
+    db_manager.connect()
