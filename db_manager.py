@@ -15,7 +15,7 @@ class DBManager:
         self.cursor = None
 
     def connect( self, _hostname, _username, _password ):
-        pass
+        print("Connecting to {}@{} {}".format( _username, _hostname, _password ))
 
     def use_db( self, _project_name ):
         projects    = os.listdir( consts.PROJECTS_FOLDER )
