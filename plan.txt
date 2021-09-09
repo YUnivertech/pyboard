@@ -45,3 +45,32 @@ GUI level components:
     Projects - Name, Description, boards
     Boards - Name, Description, Columns
     Cards - Name, Description, Color
+
+
+After connecting:
+3 main frames - {top frame, left frame, right frame}
+left frame - contains tree view of projects (drop down to get boards)
+top frame - contains actions buttons (based on context)
+main frame - contains interface (the cards + columns)
+
+new project:
+main frame contains two text entries, for entering name and description of project
+one button to confirm
+
+delete project:
+disabled until a project is "selected" after which it deletes the currently selected project
+and brings user back to initial state
+
+edit project:
+similar to new project but entries filled by default to current values of name and description
+
+new board:
+main frame contains two text entries, for entering name and description of board
+one button to confirm
+
+delete board:
+disabled until a board is "selected" after which it deletes the currently selected board
+and brings user back to initial state
+
+edit board:
+similar to new board but entries filled by default to current values of name and description
