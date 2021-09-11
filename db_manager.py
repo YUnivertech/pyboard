@@ -20,6 +20,7 @@ class DBManager:
         print("Connecting to {}@{} {}".format( _username, _hostname, _password ))
 
     def use_db( self, _project_name ):
+        self.stop( )
         projects      = os.listdir( consts.PROJECTS_FOLDER )
         _project_name = consts.PROJECT_PREFIX + _project_name
         db_exists     = ( _project_name + ".db" ) in projects
@@ -280,7 +281,7 @@ class DBManager:
     def get_all_projects( self ):
         projects      = os.listdir( consts.PROJECTS_FOLDER )
         _len          = len( consts.PROJECT_PREFIX )
-        project_names = list( map( lambda e: e[ _len:: ], projects ) )
+        project_names = list( map( lambda e: e[ _len:-3:1 ], projects ) )
         consts.dbg( 1, "Class DBManager - function get_all_projects - value of project_names:", project_names )
         return project_names
 
