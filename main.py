@@ -25,20 +25,25 @@ def tree_click( _event ):
     if iid[0] == 'p':
         print( "SWITCHING PROJECT TO {}".format( name ) )
         manager.use_db( name )
-        active_prj = name
+        active_prj              = name
+        active_brd              = None
 
         # enable buttons for manipulating active project
-        del_prj_but["state"] = tk.NORMAL
-        edt_prj_but["state"] = tk.NORMAL
-        new_brd_but["state"] = tk.NORMAL
+        del_prj_but["state"]    = tk.NORMAL
+        edt_prj_but["state"]    = tk.NORMAL
+        new_brd_but["state"]    = tk.NORMAL
+
+        # disable buttons for manipulating active board
+        del_brd_but["state"]    = tk.DISABLED
+        edt_brd_but["state"]    = tk.DISABLED
 
     elif iid[0] == 'b':
-        print( "SWITCHING BOARD TO {}".format( name ) )
-        active_brd = name
+        print( "SWITCHING BOARD TO {}".format( manager.get_board_name( int( name ) ) ) )
+        active_brd              = name
 
         # enable buttons for manipulating active board
-        del_brd_but["state"] = tk.NORMAL
-        edt_brd_but["state"] = tk.NORMAL
+        del_brd_but["state"]    = tk.NORMAL
+        edt_brd_but["state"]    = tk.NORMAL
 
 def add_prj():
 
@@ -54,12 +59,12 @@ def add_prj():
     tree_v.insert( '', 'end', iid = 'p' + name, text = name )
 
     # change active project to current project
-    active_prj = name
+    active_prj              = name
 
     # enable buttons for manipulating active project
-    del_prj_but["state"] = tk.NORMAL
-    edt_prj_but["state"] = tk.NORMAL
-    new_brd_but["state"] = tk.NORMAL
+    del_prj_but["state"]    = tk.NORMAL
+    edt_prj_but["state"]    = tk.NORMAL
+    new_brd_but["state"]    = tk.NORMAL
 
 def del_prj():
 
@@ -72,17 +77,17 @@ def del_prj():
     tree_v.delete( 'p' + active_prj )
 
     # remove active project and board
-    active_prj = manager.get_active_db()
-    active_brd = None
+    active_prj              = ''
+    active_brd              = None
 
     # disable buttons for manipulating active project
-    del_prj_but["state"] = tk.DISABLED
-    edt_prj_but["state"] = tk.DISABLED
+    del_prj_but["state"]    = tk.DISABLED
+    edt_prj_but["state"]    = tk.DISABLED
 
     # disable buttons for manipulating active board
-    new_brd_but["state"] = tk.DISABLED
-    del_brd_but["state"] = tk.DISABLED
-    edt_brd_but["state"] = tk.DISABLED
+    new_brd_but["state"]    = tk.DISABLED
+    del_brd_but["state"]    = tk.DISABLED
+    edt_brd_but["state"]    = tk.DISABLED
 
 def edt_prj():
 
@@ -108,11 +113,11 @@ def add_brd():
     tree_v.insert( 'p' + active_prj, 'end', iid = 'b' + str( iid ), text = name )
 
     # change active board to current board
-    active_brd = iid
+    active_brd              = iid
 
     # enable buttons for manipulating active board
-    del_brd_but["state"] = tk.NORMAL
-    edt_brd_but["state"] = tk.NORMAL
+    del_brd_but["state"]    = tk.NORMAL
+    edt_brd_but["state"]    = tk.NORMAL
 
 def del_brd():
 
@@ -125,11 +130,11 @@ def del_brd():
     tree_v.delete( 'b' + str( active_brd ) )
 
     # disable active board
-    active_brd = None
+    active_brd              = None
 
     # disable buttons for manipulating active board
-    del_brd_but["state"] = tk.DISABLED
-    edt_brd_but["state"] = tk.DISABLED
+    del_brd_but["state"]    = tk.DISABLED
+    edt_brd_but["state"]    = tk.DISABLED
 
 def edt_brd():
 
@@ -179,25 +184,33 @@ while not close_prmpt:
 prompt.destroy()
 
 # start of main application
-root        = gui.get_window( (200, 200), "Pyboard" )
+root                    = gui.get_window( (200, 200), "Pyboard" )
 
 # widgets for layouting main window into sections
-up_frme     = tk.Frame( root )
-lt_frme     = tk.Frame( root )
-mn_frme     = tk.Frame( root  )
+up_frme                 = tk.Frame( root )
+lt_frme                 = tk.Frame( root )
+mn_frme                 = tk.Frame( root  )
 
 # buttons for managing projects
-new_prj_but = tk.Button( up_frme, text = "new project", command = add_prj )
-del_prj_but = tk.Button( up_frme, text = "del project", command = del_prj )
-edt_prj_but = tk.Button( up_frme, text = "edit project", command = edt_prj )
+new_prj_but             = tk.Button( up_frme, text = "new project", command = add_prj )
+del_prj_but             = tk.Button( up_frme, text = "del project", command = del_prj )
+edt_prj_but             = tk.Button( up_frme, text = "edit project", command = edt_prj )
 
 # buttons for managing boards
-new_brd_but = tk.Button( up_frme, text = "new board", command = add_brd )
-del_brd_but = tk.Button( up_frme, text = "del board", command = del_brd )
-edt_brd_but = tk.Button( up_frme, text = "edit board", command = edt_brd )
+new_brd_but             = tk.Button( up_frme, text = "new board", command = add_brd )
+del_brd_but             = tk.Button( up_frme, text = "del board", command = del_brd )
+edt_brd_but             = tk.Button( up_frme, text = "edit board", command = edt_brd )
+
+# disable buttons at start
+del_prj_but["state"]    = tk.DISABLED
+edt_prj_but["state"]    = tk.DISABLED
+
+new_brd_but["state"]    = tk.DISABLED
+del_brd_but["state"]    = tk.DISABLED
+edt_brd_but["state"]    = tk.DISABLED
 
 # widget for viewing projects and boards
-tree_v      = ttk.Treeview( lt_frme, selectmode = 'browse' )
+tree_v                  = ttk.Treeview( lt_frme, selectmode = 'browse' )
 tree_v.column( "#0", anchor = tk.W )
 tree_v.bind( "<Double-1>", tree_click )
 
@@ -222,14 +235,6 @@ tree_v.pack( side = 'right' )
 up_frme.grid( row = 0, column = 0, columnspan = 2, sticky = "WNE" )
 lt_frme.grid( row = 1, column = 0, sticky = "SW" )
 mn_frme.grid( row = 1, column = 1, sticky = "SE" )
-
-# disable buttons at start
-del_prj_but["state"] = tk.DISABLED
-edt_prj_but["state"] = tk.DISABLED
-
-new_brd_but["state"] = tk.DISABLED
-del_brd_but["state"] = tk.DISABLED
-edt_brd_but["state"] = tk.DISABLED
 
 # manual implemented main loop
 while 1:
