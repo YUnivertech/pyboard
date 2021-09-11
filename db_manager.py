@@ -1,6 +1,8 @@
 import os
 import sqlite3
 
+import send2trash
+
 import consts
 
 if not os.path.isdir( consts.PROJECTS_FOLDER ):
@@ -18,12 +20,43 @@ class DBManager:
         print("Connecting to {}@{} {}".format( _username, _hostname, _password ))
 
     def use_db( self, _project_name ):
-        projects    = os.listdir( consts.PROJECTS_FOLDER )
-        db_exists   = ( _project_name + ".db" ) in projects
-        self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
-        self.conn   = sqlite3.connect( self.db )
-        self.cursor = self.conn.cursor( )
+        projects      = os.listdir( consts.PROJECTS_FOLDER )
+        _project_name = consts.PROJECT_PREFIX + _project_name
+        db_exists     = ( _project_name + ".db" ) in projects
         if not db_exists:
+            raise FileNotFoundError("DB does not exist")
+            # return False
+        else:
+            self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
+            self.conn   = sqlite3.connect( self.db )
+            self.cursor = self.conn.cursor( )
+        # return True
+
+    def get_next_board_uid( self ):
+        self.cursor.execute( "SELECT `board_last_used_uid` FROM `Info`;" )
+        fetched_data   = self.cursor.fetchall( )
+        next_board_uid = fetched_data[ 0 ][ 0 ] + 1
+        consts.dbg( 1, "Class DBManager - function get_next_board_uid - value of next_board_uid:", next_board_uid )
+        return next_board_uid
+
+    def get_next_card_uid( self ):
+        self.cursor.execute( "SELECT `card_last_used_uid` FROM `Info`;" )
+        fetched_data  = self.cursor.fetchall( )
+        next_card_uid = fetched_data[ 0 ][ 0 ] + 1
+        consts.dbg( 1, "Class DBManager - function get_next_card_uid - value of next_card_uid:", next_card_uid )
+        return next_card_uid
+
+    def add_project( self, _project_name, _project_description ):
+        projects = os.listdir( consts.PROJECTS_FOLDER )
+        _project_name = consts.PROJECT_PREFIX + _project_name
+        db_exists = (_project_name + ".db") in projects
+        if db_exists:
+            raise FileExistsError("DB already exists")
+            # return False
+        else:
+            self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
+            self.conn   = sqlite3.connect( self.db )
+            self.cursor = self.conn.cursor( )
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Cards'"
                                     "( "
                                         "'uid' UNSIGNED BIGINT PRIMARY KEY, "
@@ -52,23 +85,10 @@ class DBManager:
                                         "'card_last_used_uid' UNSIGNED BIGINT "
                                     ");" )
             self.cursor.execute( "INSERT INTO `Info` "
-                                    "( `board_last_used_uid`, `card_last_used_uid` ) "
-                                    "VALUES ( '0', '0' );" )
+                                    "( `project_info`, `board_last_used_uid`, `card_last_used_uid` ) "
+                                    "VALUES ( ?, '0', '0' );",
+                                    ( _project_description, ) )
             self.conn.commit( )
-
-    def get_next_board_uid( self ):
-        self.cursor.execute( "SELECT `board_last_used_uid` FROM `Info`;" )
-        fetched_data   = self.cursor.fetchall( )
-        next_board_uid = fetched_data[ 0 ][ 0 ] + 1
-        consts.dbg( 1, "Class DBManager - function get_next_board_uid - value of next_board_uid:", next_board_uid )
-        return next_board_uid
-
-    def get_next_card_uid( self ):
-        self.cursor.execute( "SELECT `card_last_used_uid` FROM `Info`;" )
-        fetched_data  = self.cursor.fetchall( )
-        next_card_uid = fetched_data[ 0 ][ 0 ] + 1
-        consts.dbg( 1, "Class DBManager - function get_next_card_uid - value of next_card_uid:", next_card_uid )
-        return next_card_uid
 
     def add_board( self, _board_uid, _board_name, _board_description ):
         consts.dbg( 1, "Class DBManager - function add_board - value of _board_uid:", _board_uid )
@@ -214,6 +234,13 @@ class DBManager:
                                 ( _new_tag_value, _board_uid, _tag_name, _prev_tag_value ) )
         self.conn.commit( )
 
+    def delete_project( self, _project_name ):
+        db = consts.PROJECTS_FOLDER + "/" + consts.PROJECT_PREFIX + _project_name + ".db"
+        send2trash.send2trash( db )
+
+    def delete_current_project( self ):
+        send2trash.send2trash( self.db )
+
     def delete_board( self, _board_uid ):
         self.cursor.execute( "DELETE FROM `Boards` "
                                 "WHERE `uid` = ?;",
@@ -249,6 +276,13 @@ class DBManager:
                                 "WHERE `board_uid` = ? AND `card_uid` = ?;",
                                 ( _board_uid, _card_uid ) )
         self.conn.commit( )
+
+    def get_all_projects( self ):
+        projects      = os.listdir( consts.PROJECTS_FOLDER )
+        _len          = len( consts.PROJECT_PREFIX )
+        project_names = list( map( lambda e: e[ _len:: ], projects ) )
+        consts.dbg( 1, "Class DBManager - function get_all_projects - value of project_names:", project_names )
+        return project_names
 
     def get_project_info( self ):
         self.cursor.execute( "SELECT `project_info` FROM `Info`;" )
@@ -412,10 +446,11 @@ class DBManager:
         pass
 
     def stop( self ):
-        self.conn.close( )
+        if self.conn:
+            self.conn.close( )
 
 
 # Testing
 if __name__ == "__main__":
     db_manager = DBManager()
-    db_manager.connect()
+    db_manager.connect(None, None, None)
