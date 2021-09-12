@@ -16,12 +16,12 @@ class DBManager:
         self.conn   = None
         self.cursor = None
 
-        self.get_active_db = lambda : self.db[ len( consts.PROJECTS_FOLDER ) + 1 + len( consts.PROJECT_PREFIX ):-3 ]
+        self.get_active_project = lambda: self.db[ len( consts.PROJECTS_FOLDER ) + 1 + len( consts.PROJECT_PREFIX ):-3 ]
 
     def connect( self, _hostname, _username, _password ):
         print("Connecting to {}@{} {}".format( _username, _hostname, _password ))
 
-    def use_db( self, _project_name ):
+    def use_project( self, _project_name ):
         self.stop( )
         projects      = os.listdir( consts.PROJECTS_FOLDER )
         _project_name = consts.PROJECT_PREFIX + _project_name
@@ -239,9 +239,12 @@ class DBManager:
 
     def delete_project( self, _project_name ):
         db = consts.PROJECTS_FOLDER + "/" + consts.PROJECT_PREFIX + _project_name + ".db"
+        if db == self.db:
+            self.stop()
         send2trash.send2trash( db )
 
     def delete_current_project( self ):
+        self.stop()
         send2trash.send2trash( self.db )
 
     def delete_board( self, _board_uid ):
@@ -449,6 +452,8 @@ class DBManager:
         pass
 
     def stop( self ):
+        self.db = None
+        self.cursor = None
         if self.conn:
             self.conn.close( )
 

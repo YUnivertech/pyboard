@@ -24,7 +24,7 @@ def tree_click( _event ):
 
     if iid[0] == 'p':
         print( "SWITCHING PROJECT TO {}".format( name ) )
-        manager.use_db( name )
+        manager.use_project( name )
         active_prj              = name
         active_brd              = None
 
@@ -513,7 +513,7 @@ form_canc_but           = tk.Button( form_frme, text = "Cancel" )
 # insert all projects and views
 for prj in manager.get_all_projects():
     tree_v.insert( '', 'end', iid = 'p' + prj, text = prj )
-    manager.use_db( prj )
+    manager.use_project( prj )
     for brd in manager.get_all_boards():
         tree_v.insert( 'p' + prj, 'end', iid = 'b' + str( brd[0] ), text = brd[1] )
 
