@@ -239,9 +239,12 @@ class DBManager:
 
     def delete_project( self, _project_name ):
         db = consts.PROJECTS_FOLDER + "/" + consts.PROJECT_PREFIX + _project_name + ".db"
+        if db == self.db:
+            self.stop()
         send2trash.send2trash( db )
 
     def delete_current_project( self ):
+        self.stop()
         send2trash.send2trash( self.db )
 
     def delete_board( self, _board_uid ):
@@ -449,6 +452,8 @@ class DBManager:
         pass
 
     def stop( self ):
+        self.db = None
+        self.cursor = None
         if self.conn:
             self.conn.close( )
 
