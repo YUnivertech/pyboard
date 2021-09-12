@@ -108,7 +108,12 @@ def add_prj_conf():
 
     except:
 
-        warning_lbl.configure( text = "A PROJECT WITH NAME ALREADY EXISTS!" )
+        warning_lbl.configure( text = "A PROJECT WITH THIS NAME ALREADY EXISTS!" )
+
+        new_prj_but["state"]    = tk.DISABLED
+        del_prj_but["state"]    = tk.DISABLED
+        edt_prj_but["state"]    = tk.DISABLED
+        new_brd_but["state"]    = tk.DISABLED
 
 def add_prj_canc():
 
@@ -383,7 +388,7 @@ pass_entry.grid( row = 2, column = 0 )
 conn_btn.grid( row = 3, column = 0 )
 
 # ! ONLY FOR SQLITE BRANCH
-conn_btn.invoke()
+# conn_btn.invoke()
 
 # manual implemented main loop
 while not close_prmpt:
