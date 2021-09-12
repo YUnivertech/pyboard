@@ -238,6 +238,7 @@ def edt_prj_canc():
 
 def add_brd_init():
 
+    global active_prj, active_brd
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
 
     # disable buttons for manipulating active project
@@ -256,40 +257,101 @@ def add_brd_init():
 
 def add_brd_conf():
 
+    global active_prj, active_brd
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
 
-    # disable buttons for manipulating active project
-    new_prj_but["state"]    = tk.NORMAL
-    del_prj_but["state"]    = tk.NORMAL
-    edt_prj_but["state"]    = tk.NORMAL
+    # get name, decription and iid as entered by user and clear text boxes
+    name                    = entry1.get()
+    entry1.insert( 0, '' )
+    desc                    = entry2.get()
+    entry2.insert( 0, '' )
+    iid                     = manager.get_next_board_uid()
 
-    # disable buttons for manipulating active board
-    new_brd_but["state"]    = tk.NORMAL
-    del_brd_but["state"]    = tk.NORMAL
-    edt_brd_but["state"]    = tk.NORMAL
+    # get list of existing boards and check if name is already present
+    existing_boards         = set( map( lambda e : e[1], manager.get_all_boards() ) )
+    if name in existing_boards:
+
+        warning_lbl.configure( text = 'A BOARD WITH THIS NAME ALREADY EXISTS' )
+
+    else:
+
+        # enable buttons for manipulating active project
+        new_prj_but["state"]    = tk.NORMAL
+        del_prj_but["state"]    = tk.NORMAL
+        edt_prj_but["state"]    = tk.NORMAL
+
+        # enable buttons for manipulating active board
+        new_brd_but["state"]    = tk.NORMAL
+        del_brd_but["state"]    = tk.NORMAL
+        edt_brd_but["state"]    = tk.NORMAL
+
+        # create project
+        manager.add_board( iid, name, desc )
+
+        # insert into widget
+        tree_v.insert( 'p' + active_prj, 'end', iid = 'b' + str( iid ), text = name )
+
+        # clear text entry widgets
+        entry1.delete( 0, "end" )
+        entry2.delete( 0, "end" )
+
+        # clear warning label
+        warning_lbl.configure( text = '' )
+
+        # remove form from main frame
+        form_frme.grid_forget()
+
+        # update active project
+        active_brd        = str( iid )
 
 def add_brd_canc():
 
+    global active_prj, active_brd
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
 
+    # enable buttons for manipulating active project
+    new_prj_but["state"]    = tk.NORMAL
+    del_prj_but["state"]    = tk.NORMAL
+    edt_prj_but["state"]    = tk.NORMAL
+    new_brd_but["state"]    = tk.NORMAL
+
+    if active_brd:
+        # enable board management buttons
+        del_brd_but["state"]    = tk.NORMAL
+        edt_brd_but["state"]    = tk.NORMAL
+
+    # clear text boxes
+    entry1.delete( 0, "end" )
+    entry2.delete( 0, "end" )
+
+    # clear warning label
+    warning_lbl.configure( text = '' )
+
+    # remove form from main frame
+    form_frme.grid_forget()
 
 def rem_brd_conf():
 
+    global active_prj, active_brd
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
 
-    # disable buttons for manipulating active project
-    new_prj_but["state"]    = tk.DISABLED
-    del_prj_but["state"]    = tk.DISABLED
-    edt_prj_but["state"]    = tk.DISABLED
+    # delete board for manager
+    manager.delete_board( active_brd )
+
+    # update widget
+    tree_v.delete( 'b' + str( active_brd ) )
+
+    # forget active board
+    active_brd              = None
 
     # disable buttons for manipulating active board
-    new_brd_but["state"]    = tk.DISABLED
     del_brd_but["state"]    = tk.DISABLED
     edt_brd_but["state"]    = tk.DISABLED
 
 
 def edt_brd_init():
 
+    global active_brd, active_prj
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
 
     # disable buttons for manipulating active project
@@ -306,69 +368,73 @@ def edt_brd_init():
     form_conf_but.configure( command = edt_brd_conf )
     form_canc_but.configure( command = edt_brd_canc )
 
+    entry1.insert( 0, manager.get_board_name( active_brd ) )
+    entry2.insert( 0, manager.get_board_description( active_brd ) )
+
 def edt_brd_conf():
 
+    global active_prj, active_brd
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
+
+    name                    = entry1.get()
+    desc                    = entry2.get()
+    iid                     = int( active_brd )
+
+    existing_boards         = set( map( lambda e : e[1], manager.get_all_boards() ) )
+
+    if name != manager.get_board_name( active_brd ) and name in existing_boards:
+
+        warning_lbl.configure( text = "A BOARD WITH THIS NAME ALREADY EXISTS")
+
+    else:
+
+        new_prj_but["state"]    = tk.NORMAL
+        del_prj_but["state"]    = tk.NORMAL
+        edt_prj_but["state"]    = tk.NORMAL
+        new_brd_but["state"]    = tk.NORMAL
+        del_brd_but["state"]    = tk.NORMAL
+        edt_brd_but["state"]    = tk.NORMAL
+
+        # update board
+        manager.update_board( iid, name, desc )
+
+        # update widget
+        tree_v.delete( 'b' + active_brd )
+        tree_v.insert( 'p' + active_prj, 'end', iid = 'b' + active_brd, text = name )
+
+        # clear text entry widgets
+        entry1.delete( 0, "end" )
+        entry2.delete( 0, "end" )
+
+        # clear warning label
+        warning_lbl.configure( text = '' )
+
+        # remove form from main frame
+        form_frme.grid_forget()
 
 def edt_brd_canc():
 
+    global active_brd, active_prj
     global mn_frme, form_frme, form_conf_but, form_canc_but, label1, label2, entry1, entry2, warning_lbl
 
-
-def add_brd():
-
-    global active_brd
-
-    name    = input("NAME: ")
-    desc    = input("DESC: ")
-    iid     = manager.get_next_board_uid()
-
-    # add board for manager
-    manager.add_board( iid, name, desc )
-
-    # update widget
-    tree_v.insert( 'p' + active_prj, 'end', iid = 'b' + str( iid ), text = name )
-
-    # change active board to current board
-    active_brd              = iid
-
-    # enable buttons for manipulating active board
+    # disable all management buttons
+    new_prj_but["state"]    = tk.NORMAL
+    del_prj_but["state"]    = tk.NORMAL
+    edt_prj_but["state"]    = tk.NORMAL
+    new_brd_but["state"]    = tk.NORMAL
     del_brd_but["state"]    = tk.NORMAL
     edt_brd_but["state"]    = tk.NORMAL
 
-def del_brd():
+    # clear text boxes
+    entry1.delete( 0, 'end' )
+    entry2.delete( 0, 'end' )
 
-    global active_brd
+    # clear warning label
+    warning_lbl.configure( text = '' )
 
-    # delete board for manager
-    manager.delete_board( active_brd )
+    # remove form from main frame
+    form_frme.grid_forget()
 
-    # update widget
-    tree_v.delete( 'b' + str( active_brd ) )
-
-    # disable active board
-    active_brd              = None
-
-    # disable buttons for manipulating active board
-    del_brd_but["state"]    = tk.DISABLED
-    edt_brd_but["state"]    = tk.DISABLED
-
-def edt_brd():
-
-    global active_brd
-
-    print( "CURRENT NAME: {}".format( manager.get_board_name( active_brd ) ) )
-    print( "CURRENT DESC: {}".format( manager.get_board_description( active_brd ) ) )
-
-    name = input("NAME: ")
-    desc = input("DESC: ")
-
-    # update board info for manager
-    manager.update_board( active_brd, name, desc )
-
-    # update widget
-    tree_v.delete( 'b' + active_brd )
-    tree_v.insert( 'p' + active_prj, 'end', iid = 'b' + str( active_brd ), text = name )
 
 # Create initial prompt to enter server credentials
 prompt      = gui.get_window( (200, 200), "Pyboard" )
@@ -388,7 +454,7 @@ pass_entry.grid( row = 2, column = 0 )
 conn_btn.grid( row = 3, column = 0 )
 
 # ! ONLY FOR SQLITE BRANCH
-# conn_btn.invoke()
+conn_btn.invoke()
 
 # manual implemented main loop
 while not close_prmpt:
@@ -414,9 +480,9 @@ del_prj_but             = tk.Button( up_frme, text = "del project", command = re
 edt_prj_but             = tk.Button( up_frme, text = "edit project", command = edt_prj_init )
 
 # buttons for managing boards
-new_brd_but             = tk.Button( up_frme, text = "new board", command = add_brd )
-del_brd_but             = tk.Button( up_frme, text = "del board", command = del_brd )
-edt_brd_but             = tk.Button( up_frme, text = "edit board", command = edt_brd )
+new_brd_but             = tk.Button( up_frme, text = "new board", command = add_brd_init )
+del_brd_but             = tk.Button( up_frme, text = "del board", command = rem_brd_conf )
+edt_brd_but             = tk.Button( up_frme, text = "edit board", command = edt_brd_init )
 
 # disable buttons at start
 del_prj_but["state"]    = tk.DISABLED
@@ -432,7 +498,7 @@ tree_v.column( "#0", anchor = tk.W )
 tree_v.bind( "<Double-1>", tree_click )
 
 # widgets for forms
-form_frme                = tk.Frame( mn_frme )
+form_frme               = tk.Frame( mn_frme )
 
 label1                  = tk.Label( form_frme, text = "Name: " )
 label2                  = tk.Label( form_frme, text = "Desc: " )
