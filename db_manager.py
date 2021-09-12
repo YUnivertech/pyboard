@@ -244,8 +244,9 @@ class DBManager:
         send2trash.send2trash( db )
 
     def delete_current_project( self ):
+        db = self.db
         self.stop()
-        send2trash.send2trash( self.db )
+        send2trash.send2trash( db )
 
     def delete_board( self, _board_uid ):
         self.cursor.execute( "DELETE FROM `Boards` "
