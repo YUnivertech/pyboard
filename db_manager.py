@@ -18,8 +18,8 @@ class DBManager:
 
         self.get_active_project = lambda: self.db[ len( consts.PROJECTS_FOLDER ) + 1 + len( consts.PROJECT_PREFIX ):-3 ]
 
-    def connect( self, _hostname, _username, _password ):
-        print("Connecting to {}@{} {}".format( _username, _hostname, _password ))
+    def connect( self, _username, _hostname, _password ):
+        print( "Connecting to {}@{} {}".format( _username, _hostname, _password ) )
 
     def use_project( self, _project_name ):
         self.stop( )
@@ -27,7 +27,7 @@ class DBManager:
         _project_name = consts.PROJECT_PREFIX + _project_name
         db_exists     = ( _project_name + ".db" ) in projects
         if not db_exists:
-            raise FileNotFoundError("DB does not exist")
+            raise FileNotFoundError( "DB does not exist" )
             # return False
         else:
             self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
@@ -52,9 +52,9 @@ class DBManager:
     def add_project( self, _project_name, _project_description ):
         projects = os.listdir( consts.PROJECTS_FOLDER )
         _project_name = consts.PROJECT_PREFIX + _project_name
-        db_exists = (_project_name + ".db") in projects
+        db_exists = ( _project_name + ".db" ) in projects
         if db_exists:
-            raise FileExistsError("DB already exists")
+            raise FileExistsError( "DB already exists" )
             # return False
         else:
             self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
@@ -67,11 +67,11 @@ class DBManager:
                                         "'color' TEXT "
                                     ");" )
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Boards'"
-                                    "("
+                                    "( "
                                         "'uid' UNSIGNED BIGINT PRIMARY KEY, "
                                         "'name' TEXT, "
                                         "'description' TEXT "
-                                    "  );" )
+                                    ");" )
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Relations'"
                                     "( "
                                         "'board_uid' UNSIGNED BIGINT, "
@@ -192,14 +192,14 @@ class DBManager:
         self.cursor.execute( "UPDATE `Cards` "
                                 "SET `description` = ? "
                                 "WHERE `uid` = ?;",
-                                ( _card_description, _card_uid) )
+                                ( _card_description, _card_uid ) )
         self.conn.commit( )
 
     def update_card_color( self, _card_uid, _card_color ):
         self.cursor.execute( "UPDATE `Cards` "
                                 "SET `color` = ? "
                                 "WHERE `uid` = ?;",
-                                ( _card_color, _card_uid) )
+                                ( _card_color, _card_uid ) )
         self.conn.commit( )
 
     def update_card_tag( self, _board_uid, _card_uid, _new_tag_name, _new_tag_value, _prev_tag_name ):
@@ -240,12 +240,12 @@ class DBManager:
     def delete_project( self, _project_name ):
         db = consts.PROJECTS_FOLDER + "/" + consts.PROJECT_PREFIX + _project_name + ".db"
         if db == self.db:
-            self.stop()
+            self.stop( )
         send2trash.send2trash( db )
 
     def delete_current_project( self ):
         db = self.db
-        self.stop()
+        self.stop( )
         send2trash.send2trash( db )
 
     def delete_board( self, _board_uid ):
@@ -416,7 +416,7 @@ class DBManager:
         return cards_uid
 
     def get_cards_in_board( self, _board_uid ):
-        self.cursor.execute( "SELECT `Cards`.`uid`, `Cards`.`name`, `Cards`.`description`, `Cards`.`color` FROM `Cards`, `Relations` "
+        self.cursor.execute( "SELECT DISTINCT `Cards`.`uid`, `Cards`.`name`, `Cards`.`description`, `Cards`.`color` FROM `Cards`, `Relations` "
                                 "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = ?;",
                                 ( _board_uid, ) )
         fetched_data   = self.cursor.fetchall( )
@@ -461,5 +461,35 @@ class DBManager:
 
 # Testing
 if __name__ == "__main__":
-    db_manager = DBManager()
-    db_manager.connect(None, None, None)
+    db_manager = DBManager( )
+    db_manager.connect( None, None, None )
+    db_manager.use_project( "Project 1" )
+    # db_manager.add_board( 1, "board 1", "" )
+    # db_manager.add_card( 1, "card 1", "temp description 1", None )
+    # db_manager.add_card( 2, "card 2", "temp description 2", None )
+    # db_manager.add_card( 3, "card 3", "temp description 3", None )
+    # db_manager.add_card( 4, "card 4", "temp description 4", None )
+    # db_manager.add_card( 5, "card 5", "temp description 5", None )
+    # db_manager.add_card( 6, "card 6", "temp description 6", None )
+    # db_manager.add_card( 7, "card 7", "temp description 7", None )
+    # db_manager.add_card( 8, "card 8", "temp description 8", None )
+    # db_manager.add_card_to_board( 1, 1 )
+    # db_manager.add_card_to_board( 1, 2 )
+    # db_manager.add_card_to_board( 1, 3 )
+    # db_manager.add_card_to_board( 1, 4 )
+    # db_manager.add_card_to_board( 1, 5 )
+    # db_manager.add_card_to_board( 1, 6 )
+    # db_manager.add_card_tag( 1, 1, "Stage", "TODO" )
+    # db_manager.add_card_tag( 1, 2, "Stage", "TODO" )
+    # db_manager.add_card_tag( 1, 3, "Stage", "In Progress" )
+    # db_manager.add_card_tag( 1, 4, "Stage", "In Progress" )
+    # db_manager.add_card_tag( 1, 5, "Stage", "Done" )
+    # db_manager.add_card_tag( 1, 6, "Stage", "Done" )
+    # db_manager.add_card_tag( 1, 1, "Complexity", "Easy" )
+    # db_manager.add_card_tag( 1, 2, "Complexity", "Easy" )
+    # db_manager.add_card_tag( 1, 3, "Complexity", "Easy" )
+    # db_manager.add_card_tag( 1, 4, "Complexity", "Easy" )
+    # db_manager.add_card_tag( 1, 5, "Complexity", "Easy" )
+    # db_manager.add_card_tag( 1, 6, "Complexity", "Hard" )
+    db_manager.stop()
+
