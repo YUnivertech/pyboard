@@ -9,6 +9,7 @@ NEW_PROJECT_FORM      = 1
 EDIT_PROJECT_FORM     = 2
 NEW_BOARD_FORM        = 3
 EDIT_BOARD_FORM       = 4
+NEW_CARD_FORM         = 5
 NO_TAG_SELECTED       = "-- None --"
 VERTICAL_MOUSE_MOTION = "<MouseWheel>"
 

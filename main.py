@@ -317,9 +317,51 @@ def edit_board_cancel( ):
     current_state  = temp_state.copy( )
 
 
+def add_card_init( ):
+    global current_state, previous_state
+
+    previous_state     = current_state.copy( )
+    current_state[ 2 ] = consts.NEW_CARD_FORM
+
+
+def add_card_confirm( ):
+    global current_state, previous_state
+    global add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
+
+    # get name, description and iid as entered by user and clear text boxes
+    name = add_card_name_entry.get( )
+    add_card_name_entry.insert( 0, '' )
+    desc = add_card_description_entry.get( )
+    add_card_description_entry.insert( 0, '' )
+    iid = manager.get_next_card_uid( )
+
+    # create project
+    manager.add_card( iid, name, desc, None )
+
+    # clear text entry widgets
+    add_card_name_entry.delete( 0, "end" )
+    add_card_description_entry.delete( 0, "end" )
+
+    previous_state = current_state.copy( )
+    # current_state[ 1 ] = str( iid )
+    current_state[ 2 ] = None
+
+
+def add_card_cancel( ):
+    global current_state, previous_state
+    global add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
+
+    add_card_name_entry.delete( 0, "end" )
+    add_card_description_entry.delete( 0, "end" )
+
+    temp_state     = previous_state.copy( )
+    previous_state = current_state.copy( )
+    current_state  = temp_state.copy( )
+
+
 def update_state( _root_window, _main_frame ):
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
-    global add_project_form, edit_project_form, add_board_form, edit_board_form
+    global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
 
     state_handled = False
 
@@ -357,6 +399,7 @@ def update_state( _root_window, _main_frame ):
         delete_project_button[ "state" ] = tk.NORMAL
         edit_project_button[ "state" ]   = tk.NORMAL
         new_board_button[ "state" ]      = tk.NORMAL
+        new_card_button[ "state" ]       = tk.NORMAL
         edit_board_button[ "state" ]     = tk.DISABLED
         delete_board_button[ "state" ]   = tk.DISABLED
 
@@ -375,6 +418,7 @@ def update_state( _root_window, _main_frame ):
         new_board_button[ "state" ]      = tk.NORMAL
         edit_board_button[ "state" ]     = tk.NORMAL
         delete_board_button[ "state" ]   = tk.NORMAL
+        new_card_button[ "state" ]       = tk.NORMAL
 
         tag_dropdown.set_menu( "", consts.NO_TAG_SELECTED, *manager.get_board_tag_names( current_state[ 1 ] )[ 1:: ] )
         tag_dropdown[ "menu" ].entryconfigure( 0, font=("pointfree", 9, "italic") )
@@ -429,6 +473,17 @@ def update_state( _root_window, _main_frame ):
         delete_board_button[ "state" ]   = tk.DISABLED
 
         add_board_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
+    elif current_state[ 0 ] is not None and current_state[ 2 ] == consts.NEW_CARD_FORM:
+        state_handled = True
+        # update button states
+        new_project_button[ "state" ]    = tk.DISABLED
+        delete_project_button[ "state" ] = tk.DISABLED
+        edit_project_button[ "state" ]   = tk.DISABLED
+        new_board_button[ "state" ]      = tk.DISABLED
+        edit_board_button[ "state" ]     = tk.DISABLED
+        delete_board_button[ "state" ]   = tk.DISABLED
+
+        add_card_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
 
     if current_state[ 0 ] is None and current_state[ 1 ] is not None:       # A board is selected but a project is not
         state_handled = False
@@ -445,6 +500,8 @@ def update_state( _root_window, _main_frame ):
 prompt       = tk.Tk( )
 prompt.title( "Pyboard" )
 prompt.minsize( 250, 150 )
+prompt.tk.call("source", "sun-valley.tcl")
+prompt.tk.call("set_theme", "light")
 
 prompt_frame = ttk.LabelFrame( prompt, text="Prompt frame", padding=( 5, 5, 5, 5 ) )
 # prompt_frame = tk.Frame( prompt )
@@ -490,6 +547,8 @@ except Exception as e:
 root = tk.Tk( )
 root.title( "Pyboard" )
 root.minsize( 250, 150 )
+root.tk.call("source", "sun-valley.tcl")
+root.tk.call("set_theme", "light")
 
 s = ttk.Style( )
 s.configure( "my.TMenubutton", font = ( "pointfree", 9, "italic" ) )
@@ -571,6 +630,23 @@ edit_board_cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan = 2 )
 edit_board_confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan = 2 )
 edit_board_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 
+# add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
+add_card_form              = ttk.LabelFrame( main_frame, text="add card form frame", padding=( 5, 5, 5, 5 ) )
+add_card_name_label        = ttk.Label( add_card_form, text="Name: " )
+add_card_description_label = ttk.Label( add_card_form, text="Desc: " )
+add_card_name_entry        = ttk.Entry( add_card_form )
+add_card_description_entry = ttk.Entry( add_card_form )
+# add_card_warning_label     = ttk.Label( add_card_form, text="" )
+add_card_cancel_button     = ttk.Button( add_card_form, text="Cancel", command=add_card_cancel )
+add_card_confirm_button    = ttk.Button( add_card_form, text="Confirm", command=add_card_confirm )
+add_card_name_label.grid( row=0, column=0, padx=3, pady=3 )
+add_card_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
+add_card_description_label.grid( row=1, column=0, padx=3, pady=3 )
+add_card_description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan = 3 )
+add_card_cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan = 2 )
+add_card_confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan = 2 )
+# add_card_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
+
 # TEMPORARY WORKAROUND SO THAT MAIN FRAME IS SHOWN
 # temp_button = ttk.Button( main_frame, text="temp button", command=lambda: print( manager.db, "\nPrevious loop state:", previous_loop_state, "\nPrevious state:", previous_state, "\nCurrent state:", current_state, tag_name.get() ) )
 # temp_button = ttk.Button( main_frame, text="temp button", command=lambda: column_canvas.configure( width=frame_for_canvas.winfo_width() + 2 ) )
@@ -580,12 +656,14 @@ edit_board_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 # icon = tk.PhotoImage(file="C:\\Users\\vikas\\Documents\\Akshaj\\Akshaj_python\\pyboard\\theme\\light\\arrow-down.png")
 # new_project_button    = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right", image=icon )
 # new_project_button.image = icon
+
 new_project_button    = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right" )
 delete_project_button = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
 edit_project_button   = ttk.Button( top_frame, text="edit project", command=edit_project_init )
 new_board_button      = ttk.Button( top_frame, text="new board", command=add_board_init )
 delete_board_button   = ttk.Button( top_frame, text="delete board", command=delete_board_confirm )
 edit_board_button     = ttk.Button( top_frame, text="edit board", command=edit_board_init )
+new_card_button       = ttk.Button( top_frame, text="new card", command=add_card_init )
 tag_name              = tk.StringVar( value=consts.NO_TAG_SELECTED )
 tag_dropdown          = ttk.OptionMenu( top_frame,  tag_name, "", consts.NO_TAG_SELECTED, "something", style="my.TMenubutton", command=lambda event: update_state(root, main_frame) )
 tag_dropdown[ "menu" ].entryconfigure( 0, font = ( "pointfree", 9,"italic" ) )
@@ -600,6 +678,7 @@ edit_project_button[ "state" ]   = tk.DISABLED
 new_board_button[ "state" ]      = tk.DISABLED
 delete_board_button[ "state" ]   = tk.DISABLED
 edit_board_button[ "state" ]     = tk.DISABLED
+new_card_button[ "state" ]       = tk.DISABLED
 
 # place widgets in top frame
 new_project_button.grid( row=0, column=0, padx=3, pady=3, sticky="ew" )
@@ -608,9 +687,10 @@ edit_project_button.grid( row=0, column=2, padx=3, pady=3, sticky="ew" )
 new_board_button.grid( row=0, column=3, padx=3, pady=3, sticky="ew" )
 delete_board_button.grid( row=0, column=4, padx=3, pady=3, sticky="ew" )
 edit_board_button.grid( row=0, column=5, padx=3, pady=3, sticky="ew" )
-tag_dropdown.grid( row=0, column=6, padx=3, pady=3, sticky="ew" )
+new_card_button.grid( row=0, column=6, padx=3, pady=3, sticky="ew" )
+tag_dropdown.grid( row=0, column=7, padx=3, pady=3, sticky="ew" )
 
-for i in range( 7 ):
+for i in range( 8 ):
     top_frame.columnconfigure( index=i, weight=1 )
 
 # widgets in the left frame
