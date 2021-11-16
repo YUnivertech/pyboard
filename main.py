@@ -6,13 +6,15 @@ from tkinter import ttk
 import consts
 import db_manager
 
-manager             = db_manager.DBManager( )
-current_state       = [ None, None, None ]
-previous_loop_state = [ None, None, None ]
-previous_state      = [ None, None, None ]
-prompt_closed       = False
-tag_name            = None
+manager                 = db_manager.DBManager( )
+current_state           = [ None, None, None ]
+previous_loop_state     = [ None, None, None ]
+previous_state          = [ None, None, None ]
+prompt_closed           = False
+tag_name                = None
 
+board_checkbox_states   = []
+boards                  = []
 
 def generate_card( name, description, master, _canvas ):
     card_frame = ttk.LabelFrame( master=master, text="", padding=( 5, 0, 5, 5 ) )
@@ -319,14 +321,54 @@ def edit_board_cancel( ):
 
 def add_card_init( ):
     global current_state, previous_state
+    global board_checkbox_states, add_card_board_frame
 
     previous_state     = current_state.copy( )
     current_state[ 2 ] = consts.NEW_CARD_FORM
 
+#! ----
+
+# canvas = tk.Canvas(root, highlightthickness=0, borderwidth=0, background="#fafafa")
+# temp_var = [ tk.BooleanVar( value=False )  for i in range(100) ]
+# def populate(frame):
+#     global var, temp_var
+#     for row in range(100):
+#         temp = ttk.Checkbutton( frame, text="temp"+str(row), variable=temp_var[row] )
+#         temp.grid( row=row, column=0, padx =3, pady=3, sticky="w" )
+#         print(temp.state())
+
+#     var = tk.BooleanVar()
+#     c = ttk.Checkbutton( frame, text="temp 100", variable=var )
+#     print(c.state())
+#     c.grid( row=100, column=0, padx=3, pady=3 )
+
+# def onFrameConfigure(canvas):
+#     '''Reset the scroll region to encompass the inner frame'''
+#     canvas.configure(scrollregion=canvas.bbox("all"))
+
+# frame = ttk.LabelFrame(canvas, text="Frame", padding=( 5, 5, 5, 5 ))
+# vsb = ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
+# canvas.configure(yscrollcommand=vsb.set)
+
+# vsb.pack(side="right", fill="y")
+# canvas.pack(side="left", fill="both", expand=True)
+# canvas.create_window((4,4), window=frame, anchor="nw")
+
+# frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
+# # frame.bind("<Button-1>", lambda event: print("hi"))
+# # canvas.bind("<Button-1>", lambda event: print("hi"))
+# canvas.bind("<MouseWheel>", lambda event: canvas.yview_scroll(-1*(event.delta//120), "units"))
+
+# populate(frame)
+
+# root.mainloop( )
+
+#! ----
+
 
 def add_card_confirm( ):
-    global current_state, previous_state
-    global add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
+    global current_state, previous_state, board_checkbox_states, boards
+    global add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button, add_card_board_frame
 
     # get name, description and iid as entered by user and clear text boxes
     name = add_card_name_entry.get( )
@@ -338,6 +380,10 @@ def add_card_confirm( ):
     # create project
     manager.add_card( iid, name, desc, None )
 
+    for state, board in zip( board_checkbox_states, boards ):
+        if state.get():
+            manager.add_card_to_board( board[0], iid )
+
     # clear text entry widgets
     add_card_name_entry.delete( 0, "end" )
     add_card_description_entry.delete( 0, "end" )
@@ -346,10 +392,14 @@ def add_card_confirm( ):
     # current_state[ 1 ] = str( iid )
     current_state[ 2 ] = None
 
+    for child in add_card_board_frame.winfo_children():
+        child.grid_forget()
+        child.destroy()
+
 
 def add_card_cancel( ):
     global current_state, previous_state
-    global add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
+    global add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button, add_card_board_frame
 
     add_card_name_entry.delete( 0, "end" )
     add_card_description_entry.delete( 0, "end" )
@@ -358,12 +408,18 @@ def add_card_cancel( ):
     previous_state = current_state.copy( )
     current_state  = temp_state.copy( )
 
+    for child in add_card_board_frame.winfo_children():
+        child.grid_forget()
+        child.destroy()
+
 
 def update_state( _root_window, _main_frame ):
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
+    global board_checkbox_states, boards
 
     state_handled = False
+    tag_dropdown["state"]            = tk.DISABLED
 
     if previous_loop_state[ 1 ] != current_state[ 1 ]:
         tag_name.set( consts.NO_TAG_SELECTED )
@@ -419,6 +475,7 @@ def update_state( _root_window, _main_frame ):
         edit_board_button[ "state" ]     = tk.NORMAL
         delete_board_button[ "state" ]   = tk.NORMAL
         new_card_button[ "state" ]       = tk.NORMAL
+        tag_dropdown["state"]            = tk.NORMAL
 
         tag_dropdown.set_menu( "", consts.NO_TAG_SELECTED, *manager.get_board_tag_names( current_state[ 1 ] )[ 1:: ] )
         tag_dropdown[ "menu" ].entryconfigure( 0, font=("pointfree", 9, "italic") )
@@ -482,6 +539,14 @@ def update_state( _root_window, _main_frame ):
         new_board_button[ "state" ]      = tk.DISABLED
         edit_board_button[ "state" ]     = tk.DISABLED
         delete_board_button[ "state" ]   = tk.DISABLED
+
+        # Populate dropdown of board checkboxes in canvas
+        boards                  = manager.get_all_boards()
+        board_checkbox_states   = [ tk.BooleanVar( value=False )  for i in range( len( boards ) ) ]
+
+        for row, ( state, board ) in enumerate( zip( board_checkbox_states, boards ) ):
+            c   = ttk.Checkbutton( add_card_board_frame, text=board[ 1 ], variable=state )
+            c.grid( row=row, column=0, padx=3, pady=3, sticky="w" )
 
         add_card_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
 
@@ -568,6 +633,7 @@ add_project_description_entry = ttk.Entry( add_project_form )
 add_project_warning_label     = ttk.Label( add_project_form, text="" )
 add_project_cancel_button     = ttk.Button( add_project_form, text="Cancel", command=add_project_cancel )
 add_project_confirm_button    = ttk.Button( add_project_form, text="Confirm", command=add_project_confirm )
+
 add_project_name_label.grid( row=0, column=0, padx=3, pady=3 )
 add_project_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
 add_project_description_label.grid( row=1, column=0, padx=3, pady=3 )
@@ -586,6 +652,7 @@ edit_project_description_entry = ttk.Entry( edit_project_form )
 edit_project_warning_label     = ttk.Label( edit_project_form, text="" )
 edit_project_cancel_button     = ttk.Button( edit_project_form, text="Cancel", command=edit_project_cancel )
 edit_project_confirm_button    = ttk.Button( edit_project_form, text="Confirm", command=edit_project_confirm )
+
 edit_project_name_label.grid( row=0, column=0, padx=3, pady=3 )
 edit_project_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
 edit_project_description_label.grid( row=1, column=0, padx=3, pady=3 )
@@ -604,6 +671,7 @@ add_board_description_entry = ttk.Entry( add_board_form )
 add_board_warning_label     = ttk.Label( add_board_form, text="" )
 add_board_cancel_button     = ttk.Button( add_board_form, text="Cancel", command=add_board_cancel )
 add_board_confirm_button    = ttk.Button( add_board_form, text="Confirm", command=add_board_confirm )
+
 add_board_name_label.grid( row=0, column=0, padx=3, pady=3 )
 add_board_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
 add_board_description_label.grid( row=1, column=0, padx=3, pady=3 )
@@ -622,6 +690,7 @@ edit_board_description_entry = ttk.Entry( edit_board_form )
 edit_board_warning_label     = ttk.Label( edit_board_form, text="" )
 edit_board_cancel_button     = ttk.Button( edit_board_form, text="Cancel", command=edit_board_cancel )
 edit_board_confirm_button    = ttk.Button( edit_board_form, text="Confirm", command=edit_board_confirm )
+
 edit_board_name_label.grid( row=0, column=0, padx=3, pady=3 )
 edit_board_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
 edit_board_description_label.grid( row=1, column=0, padx=3, pady=3 )
@@ -631,21 +700,34 @@ edit_board_confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan = 2 
 edit_board_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 
 # add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
-add_card_form              = ttk.LabelFrame( main_frame, text="add card form frame", padding=( 5, 5, 5, 5 ) )
-add_card_name_label        = ttk.Label( add_card_form, text="Name: " )
-add_card_description_label = ttk.Label( add_card_form, text="Desc: " )
-add_card_name_entry        = ttk.Entry( add_card_form )
-add_card_description_entry = ttk.Entry( add_card_form )
-# add_card_warning_label     = ttk.Label( add_card_form, text="" )
-add_card_cancel_button     = ttk.Button( add_card_form, text="Cancel", command=add_card_cancel )
-add_card_confirm_button    = ttk.Button( add_card_form, text="Confirm", command=add_card_confirm )
+add_card_form               = ttk.LabelFrame( main_frame, text="add card form frame", padding=( 5, 5, 5, 5 ) )
+add_card_name_label         = ttk.Label( add_card_form, text="Name: " )
+add_card_description_label  = ttk.Label( add_card_form, text="Desc: " )
+add_card_name_entry         = ttk.Entry( add_card_form )
+add_card_description_entry  = ttk.Entry( add_card_form )
+add_card_cancel_button      = ttk.Button( add_card_form, text="Cancel", command=add_card_cancel )
+add_card_confirm_button     = ttk.Button( add_card_form, text="Confirm", command=add_card_confirm )
+add_card_board_root         = ttk.LabelFrame( add_card_form, text="add card board root", padding=( 5, 5, 5, 5 ) )
+add_card_board_dropdown     = tk.Canvas( add_card_board_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
+add_card_board_scrollbar    = ttk.Scrollbar( add_card_board_root, orient='vertical', command=add_card_board_dropdown.yview)
+add_card_board_frame        = ttk.LabelFrame( add_card_board_dropdown, text="Frame in canvas", padding=( 5, 5,5, 5 ) )
+
 add_card_name_label.grid( row=0, column=0, padx=3, pady=3 )
 add_card_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
 add_card_description_label.grid( row=1, column=0, padx=3, pady=3 )
 add_card_description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan = 3 )
-add_card_cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan = 2 )
-add_card_confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan = 2 )
-# add_card_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
+
+add_card_board_frame.bind("<Configure>", lambda event: add_card_board_dropdown.configure(scrollregion=add_card_board_dropdown.bbox("all")))
+add_card_board_dropdown.configure( yscrollcommand=add_card_board_scrollbar.set )
+add_card_board_dropdown.pack( side="left", fill="both", expand=True )
+add_card_board_dropdown.create_window((4,4), window=add_card_board_frame, anchor="nw")
+add_card_board_scrollbar.pack( side="right", fill="y" )
+
+add_card_board_root.grid( row=2, column=0, padx=3, pady=3, columnspan=4 )
+
+add_card_cancel_button.grid( row=3, column=0, padx=3, pady=3, columnspan = 2 )
+add_card_confirm_button.grid( row=3, column=2, padx=3, pady=3, columnspan = 2 )
+
 
 # TEMPORARY WORKAROUND SO THAT MAIN FRAME IS SHOWN
 # temp_button = ttk.Button( main_frame, text="temp button", command=lambda: print( manager.db, "\nPrevious loop state:", previous_loop_state, "\nPrevious state:", previous_state, "\nCurrent state:", current_state, tag_name.get() ) )
@@ -679,6 +761,7 @@ new_board_button[ "state" ]      = tk.DISABLED
 delete_board_button[ "state" ]   = tk.DISABLED
 edit_board_button[ "state" ]     = tk.DISABLED
 new_card_button[ "state" ]       = tk.DISABLED
+tag_dropdown["state"]            = tk.DISABLED
 
 # place widgets in top frame
 new_project_button.grid( row=0, column=0, padx=3, pady=3, sticky="ew" )
