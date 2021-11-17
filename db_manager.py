@@ -452,6 +452,16 @@ class DBManager:
     def get_unused_board_cards( self ):
         pass
 
+    def get_boards_of_card( self, _card_uid ):
+
+        res = set()
+
+        for board_uid in self.get_all_boards_uid():
+            if _card_uid in self.get_cards_uid_in_board( board_uid ):
+                res.add( board_uid )
+
+        return res
+
     def stop( self ):
         self.db = None
         self.cursor = None
