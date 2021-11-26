@@ -1,8 +1,7 @@
 
 #! Fix card destruction
 #! Make Card rendering consistent with other forms
-
-#! BAD PATH BUG WHEN CHANGING STATE IF CARD EDITING IS ENABLED
+#! DO NOT DESTROY GLOBAL WIDGETS PLEASE (EVERYTHING INSIDE EDIT CARD BOARD ROOT SHOULD NOT BE DESTROYED!)
 
 import tkinter as tk
 from tkinter import ttk
@@ -40,9 +39,6 @@ class CardSelectHandler:
         edit_card_flag = not edit_card_flag
         edit_card_uid = self.uid
 
-def toggle_edit_card_flag():
-    global edit_card_flag
-    edit_card_flag = not edit_card_flag
 
 def generate_card( card_uid, name, description, master, _canvas ):
     card_frame              = ttk.LabelFrame( master=master, text="", padding=( 5, 0, 5, 5 ) )
@@ -99,18 +95,18 @@ def tree_click( _event ):
     iid  = tree_v.selection( )[ 0 ]
 
     if iid[ 0 ] == 'p':
-        project_name = iid[ 1: ]
+        project_name        = iid[ 1: ]
         manager.use_project( project_name )
-        previous_state = current_state.copy()
-        current_state  = [ project_name, None, None ]
+        previous_state      = current_state.copy()
+        current_state       = [ project_name, None, None ]
         print( "SWITCHING PROJECT TO {}".format( project_name ) )
     else:
-        board_uid    = iid.partition( " " )[ 0 ]
-        project_name = iid.partition( " " )[ 2 ]
+        board_uid           = iid.partition( " " )[ 0 ]
+        project_name        = iid.partition( " " )[ 2 ]
         if project_name != current_state[ 0 ]:
             manager.use_project( project_name )
-        previous_state = current_state.copy( )
-        current_state  = [ project_name, board_uid, None ]
+        previous_state      = current_state.copy( )
+        current_state       = [ project_name, board_uid, None ]
         print( "SWITCHING BOARD TO {}".format( manager.get_board_name( int( board_uid ) ) ) )
 
 
@@ -409,6 +405,41 @@ def add_card_cancel( ):
         child.destroy()
 
 
+def edit_card_cancel():
+    global edit_card_flag
+    edit_card_flag  = False
+
+def edit_card_confirm():
+    global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
+    global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
+    global board_checkbox_states, boards
+    global edit_card_flag, edit_card_flag_prv, edit_card_uid
+    global edit_card_root, edit_card_name_label, edit_card_name_entry, edit_card_desc_label, edit_card_desc_entry, edit_card_confirm_button, edit_card_cancel_button
+    global edit_card_board_root
+
+    edit_card_flag  = False
+
+    manager.update_card( edit_card_uid, edit_card_name_entry.get(), edit_card_desc_entry.get(), None )
+
+    if current_state[1] is not None:
+        pass
+
+    else:
+        valid_boards = manager.get_boards_of_card( edit_card_uid )
+
+        for ( state, board ) in zip( board_checkbox_states, boards ):
+            board_uid = board[0]
+
+            if state.get() and (board_uid not in valid_boards):
+                manager.add_card_to_board( board_uid, edit_card_uid )
+                print(f"ADDING CARD TO BOARD {board[1]}")
+            elif not state.get() and (board_uid in valid_boards):
+                manager.remove_card_from_board( board_uid, edit_card_uid )
+                print(f"REMOVING CARD FROM BOARD {board[1]}")
+
+    update_state( root, main_frame )
+
+
 def update_internal_state( _root_window, _main_frame ):
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
@@ -417,7 +448,7 @@ def update_internal_state( _root_window, _main_frame ):
     global edit_card_root, edit_card_name_label, edit_card_name_entry, edit_card_desc_label, edit_card_desc_entry, edit_card_confirm_button, edit_card_cancel_button
     global edit_card_board_root
 
-    print( f"NOW EDITING{edit_card_uid}" if edit_card_flag else "NOW NOT EDITING" )
+    print( f"NOW EDITING {edit_card_uid}" if edit_card_flag else "NOW NOT EDITING" )
 
     if edit_card_flag:
 
@@ -436,6 +467,8 @@ def update_internal_state( _root_window, _main_frame ):
         else:
             print("PROJECT CARDS")
 
+            edit_card_tag_root.grid_forget()
+
             boards = manager.get_all_boards()
             valid_boards = manager.get_boards_of_card( edit_card_uid )
             board_checkbox_states   = [ tk.BooleanVar( value=(board[0] in valid_boards) ) for board in boards ]
@@ -451,9 +484,10 @@ def update_internal_state( _root_window, _main_frame ):
         edit_card_name_entry.delete( 0, "end" )
         edit_card_desc_entry.delete( 0, "end" )
 
-        for child in edit_card_board_root.winfo_children():
+        for child in edit_card_board_frame.winfo_children():
             child.grid_forget()
             child.destroy()
+            print("DESTROYING CHECKBUTTONS")
 
         edit_card_root.grid_forget()
 
@@ -463,6 +497,8 @@ def update_state( _root_window, _main_frame ):
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
     global board_checkbox_states, boards
     global edit_card_flag, edit_card_flag_prv, edit_card_uid
+
+    edit_card_flag = False
 
     state_handled = False
     tag_dropdown["state"]            = tk.DISABLED
@@ -611,19 +647,19 @@ def update_state( _root_window, _main_frame ):
 # Main
 
 # Create initial prompt to enter server credentials
-prompt       = tk.Tk( )
+prompt                      = tk.Tk( )
 prompt.title( "Pyboard" )
 prompt.minsize( 250, 150 )
 prompt.tk.call("source", "sun-valley.tcl")
 prompt.tk.call("set_theme", "light")
 
-prompt_frame = ttk.LabelFrame( prompt, text="Prompt frame", padding=( 5, 5, 5, 5 ) )
+prompt_frame                        = ttk.LabelFrame( prompt, text="Prompt frame", padding=( 5, 5, 5, 5 ) )
 # prompt_frame = tk.Frame( prompt )
 
-username_entry = ttk.Entry( prompt_frame )
-hostname_entry = ttk.Entry( prompt_frame )
-password_entry = ttk.Entry( prompt_frame )
-connect_button = ttk.Button( master=prompt_frame, style="Accent.TButton", text="Connect", command=lambda: connect( username_entry.get( ), hostname_entry.get( ), password_entry.get( ) ) )
+username_entry                      = ttk.Entry( prompt_frame )
+hostname_entry                      = ttk.Entry( prompt_frame )
+password_entry                      = ttk.Entry( prompt_frame )
+connect_button                      = ttk.Button( master=prompt_frame, style="Accent.TButton", text="Connect", command=lambda: connect( username_entry.get( ), hostname_entry.get( ), password_entry.get( ) ) )
 
 username_entry.insert( 0, "root" )
 hostname_entry.insert( 0, "localhost" )
@@ -668,20 +704,20 @@ s = ttk.Style( )
 s.configure( "my.TMenubutton", font = ( "pointfree", 9, "italic" ) )
 
 # basic frames
-top_frame  = ttk.LabelFrame( root, text="top frame", padding=( 5, 5, 5, 5 ) )
-left_frame = ttk.LabelFrame( root, text="left frame", padding=( 5, 5, 5, 5 ) )
-main_frame = ttk.LabelFrame( root, text="main frame", padding=( 5, 5, 5, 5 ) )
+top_frame                           = ttk.LabelFrame( root, text="top frame", padding=( 5, 5, 5, 5 ) )
+left_frame                          = ttk.LabelFrame( root, text="left frame", padding=( 5, 5, 5, 5 ) )
+main_frame                          = ttk.LabelFrame( root, text="main frame", padding=( 5, 5, 5, 5 ) )
 
 # add_project_form, add_project_name_label, add_project_description_label, add_project_name_entry, add_project_description_entry, add_project_warning_label, add_project_cancel_button, add_project_confirm_button
 # forms for project
-add_project_form              = ttk.LabelFrame( main_frame, text="new project form frame", padding=( 5, 5, 5, 5 ) )
-add_project_name_label        = ttk.Label( add_project_form, text="Name: " )
-add_project_description_label = ttk.Label( add_project_form, text="Desc: " )
-add_project_name_entry        = ttk.Entry( add_project_form )
-add_project_description_entry = ttk.Entry( add_project_form )
-add_project_warning_label     = ttk.Label( add_project_form, text="" )
-add_project_cancel_button     = ttk.Button( add_project_form, text="Cancel", command=add_project_cancel )
-add_project_confirm_button    = ttk.Button( add_project_form, text="Confirm", command=add_project_confirm )
+add_project_form                    = ttk.LabelFrame( main_frame, text="new project form frame", padding=( 5, 5, 5, 5 ) )
+add_project_name_label              = ttk.Label( add_project_form, text="Name: " )
+add_project_description_label       = ttk.Label( add_project_form, text="Desc: " )
+add_project_name_entry              = ttk.Entry( add_project_form )
+add_project_description_entry       = ttk.Entry( add_project_form )
+add_project_warning_label           = ttk.Label( add_project_form, text="" )
+add_project_cancel_button           = ttk.Button( add_project_form, text="Cancel", command=add_project_cancel )
+add_project_confirm_button          = ttk.Button( add_project_form, text="Confirm", command=add_project_confirm )
 
 add_project_name_label.grid( row=0, column=0, padx=3, pady=3 )
 add_project_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
@@ -693,14 +729,14 @@ add_project_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 
 
 # edit_project_form, edit_project_name_label, edit_project_description_label, edit_project_name_entry, edit_project_description_entry, edit_project_warning_label, edit_project_cancel_button, edit_project_confirm_button
-edit_project_form              = ttk.LabelFrame( main_frame, text="edit project form frame", padding=( 5, 5, 5, 5 ) )
-edit_project_name_label        = ttk.Label( edit_project_form, text="Name: " )
-edit_project_description_label = ttk.Label( edit_project_form, text="Desc: " )
-edit_project_name_entry        = ttk.Entry( edit_project_form )
-edit_project_description_entry = ttk.Entry( edit_project_form )
-edit_project_warning_label     = ttk.Label( edit_project_form, text="" )
-edit_project_cancel_button     = ttk.Button( edit_project_form, text="Cancel", command=edit_project_cancel )
-edit_project_confirm_button    = ttk.Button( edit_project_form, text="Confirm", command=edit_project_confirm )
+edit_project_form                   = ttk.LabelFrame( main_frame, text="edit project form frame", padding=( 5, 5, 5, 5 ) )
+edit_project_name_label             = ttk.Label( edit_project_form, text="Name: " )
+edit_project_description_label      = ttk.Label( edit_project_form, text="Desc: " )
+edit_project_name_entry             = ttk.Entry( edit_project_form )
+edit_project_description_entry      = ttk.Entry( edit_project_form )
+edit_project_warning_label          = ttk.Label( edit_project_form, text="" )
+edit_project_cancel_button          = ttk.Button( edit_project_form, text="Cancel", command=edit_project_cancel )
+edit_project_confirm_button         = ttk.Button( edit_project_form, text="Confirm", command=edit_project_confirm )
 
 edit_project_name_label.grid( row=0, column=0, padx=3, pady=3 )
 edit_project_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
@@ -712,14 +748,14 @@ edit_project_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 
 
 # add_board_form, add_board_name_label, add_board_description_label, add_board_name_entry, add_board_description_entry, add_board_warning_label, add_board_cancel_button, add_board_confirm_button
-add_board_form              = ttk.LabelFrame( main_frame, text="new board form frame", padding=( 5, 5, 5, 5 ) )
-add_board_name_label        = ttk.Label( add_board_form, text="Name: " )
-add_board_description_label = ttk.Label( add_board_form, text="Desc: " )
-add_board_name_entry        = ttk.Entry( add_board_form )
-add_board_description_entry = ttk.Entry( add_board_form )
-add_board_warning_label     = ttk.Label( add_board_form, text="" )
-add_board_cancel_button     = ttk.Button( add_board_form, text="Cancel", command=add_board_cancel )
-add_board_confirm_button    = ttk.Button( add_board_form, text="Confirm", command=add_board_confirm )
+add_board_form                      = ttk.LabelFrame( main_frame, text="new board form frame", padding=( 5, 5, 5, 5 ) )
+add_board_name_label                = ttk.Label( add_board_form, text="Name: " )
+add_board_description_label         = ttk.Label( add_board_form, text="Desc: " )
+add_board_name_entry                = ttk.Entry( add_board_form )
+add_board_description_entry         = ttk.Entry( add_board_form )
+add_board_warning_label             = ttk.Label( add_board_form, text="" )
+add_board_cancel_button             = ttk.Button( add_board_form, text="Cancel", command=add_board_cancel )
+add_board_confirm_button            = ttk.Button( add_board_form, text="Confirm", command=add_board_confirm )
 
 add_board_name_label.grid( row=0, column=0, padx=3, pady=3 )
 add_board_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
@@ -731,14 +767,14 @@ add_board_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 
 
 # edit_board_form, edit_board_name_label, edit_board_description_label, edit_board_name_entry, edit_board_description_entry, edit_board_warning_label, edit_board_cancel_button, edit_board_confirm_button
-edit_board_form              = ttk.LabelFrame( main_frame, text="edit board form frame", padding=( 5, 5, 5, 5 ) )
-edit_board_name_label        = ttk.Label( edit_board_form, text="Name: " )
-edit_board_description_label = ttk.Label( edit_board_form, text="Desc: " )
-edit_board_name_entry        = ttk.Entry( edit_board_form )
-edit_board_description_entry = ttk.Entry( edit_board_form )
-edit_board_warning_label     = ttk.Label( edit_board_form, text="" )
-edit_board_cancel_button     = ttk.Button( edit_board_form, text="Cancel", command=edit_board_cancel )
-edit_board_confirm_button    = ttk.Button( edit_board_form, text="Confirm", command=edit_board_confirm )
+edit_board_form                     = ttk.LabelFrame( main_frame, text="edit board form frame", padding=( 5, 5, 5, 5 ) )
+edit_board_name_label               = ttk.Label( edit_board_form, text="Name: " )
+edit_board_description_label        = ttk.Label( edit_board_form, text="Desc: " )
+edit_board_name_entry               = ttk.Entry( edit_board_form )
+edit_board_description_entry        = ttk.Entry( edit_board_form )
+edit_board_warning_label            = ttk.Label( edit_board_form, text="" )
+edit_board_cancel_button            = ttk.Button( edit_board_form, text="Cancel", command=edit_board_cancel )
+edit_board_confirm_button           = ttk.Button( edit_board_form, text="Confirm", command=edit_board_confirm )
 
 edit_board_name_label.grid( row=0, column=0, padx=3, pady=3 )
 edit_board_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
@@ -749,17 +785,17 @@ edit_board_confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan = 2 
 edit_board_warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
 
 # add_card_form, add_card_name_label, add_card_description_label, add_card_name_entry, add_card_description_entry, add_card_cancel_button, add_card_confirm_button
-add_card_form               = ttk.LabelFrame( main_frame, text="add card form frame", padding=( 5, 5, 5, 5 ) )
-add_card_name_label         = ttk.Label( add_card_form, text="Name: " )
-add_card_description_label  = ttk.Label( add_card_form, text="Desc: " )
-add_card_name_entry         = ttk.Entry( add_card_form )
-add_card_description_entry  = ttk.Entry( add_card_form )
-add_card_cancel_button      = ttk.Button( add_card_form, text="Cancel", command=add_card_cancel )
-add_card_confirm_button     = ttk.Button( add_card_form, text="Confirm", command=add_card_confirm )
-add_card_board_root         = ttk.LabelFrame( add_card_form, text="add card board root", padding=( 5, 5, 5, 5 ) )
-add_card_board_dropdown     = tk.Canvas( add_card_board_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
-add_card_board_scrollbar    = ttk.Scrollbar( add_card_board_root, orient='vertical', command=add_card_board_dropdown.yview)
-add_card_board_frame        = ttk.LabelFrame( add_card_board_dropdown, text="Frame in canvas", padding=( 5, 5, 5, 5 ) )
+add_card_form                       = ttk.LabelFrame( main_frame, text="add card form frame", padding=( 5, 5, 5, 5 ) )
+add_card_name_label                 = ttk.Label( add_card_form, text="Name: " )
+add_card_description_label          = ttk.Label( add_card_form, text="Desc: " )
+add_card_name_entry                 = ttk.Entry( add_card_form )
+add_card_description_entry          = ttk.Entry( add_card_form )
+add_card_cancel_button              = ttk.Button( add_card_form, text="Cancel", command=add_card_cancel )
+add_card_confirm_button             = ttk.Button( add_card_form, text="Confirm", command=add_card_confirm )
+add_card_board_root                 = ttk.LabelFrame( add_card_form, text="add card board root", padding=( 5, 5, 5, 5 ) )
+add_card_board_dropdown             = tk.Canvas( add_card_board_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
+add_card_board_scrollbar            = ttk.Scrollbar( add_card_board_root, orient='vertical', command=add_card_board_dropdown.yview)
+add_card_board_frame                = ttk.LabelFrame( add_card_board_dropdown, text="Frame in canvas", padding=( 5, 5, 5, 5 ) )
 add_card_name_label.grid( row=0, column=0, padx=3, pady=3 )
 add_card_name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan = 3 )
 add_card_description_label.grid( row=1, column=0, padx=3, pady=3 )
@@ -776,16 +812,16 @@ add_card_board_root.grid( row=2, column=0, padx=3, pady=3, columnspan=4 )
 add_card_cancel_button.grid( row=3, column=0, padx=3, pady=3, columnspan = 2 )
 add_card_confirm_button.grid( row=3, column=2, padx=3, pady=3, columnspan = 2 )
 
-edit_card_root              = ttk.LabelFrame( main_frame, text="Edit Card Form", padding=( 3, 3, 3, 3 ) )
-edit_card_name_label        = ttk.Label( edit_card_root, text="Name:" )
-edit_card_name_entry        = ttk.Entry( edit_card_root )
-edit_card_desc_label        = ttk.Label( edit_card_root, text="Desc:" )
-edit_card_desc_entry        = ttk.Entry( edit_card_root )
+edit_card_root                      = ttk.LabelFrame( main_frame, text="Edit Card Form", padding=( 3, 3, 3, 3 ) )
+edit_card_name_label                = ttk.Label( edit_card_root, text="Name:" )
+edit_card_name_entry                = ttk.Entry( edit_card_root )
+edit_card_desc_label                = ttk.Label( edit_card_root, text="Desc:" )
+edit_card_desc_entry                = ttk.Entry( edit_card_root )
 
-edit_card_board_root        = ttk.LabelFrame( edit_card_root, text="edit card board root" )
-edit_card_board_dropdown    = tk.Canvas( edit_card_board_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
-edit_card_board_scrollbar   = ttk.Scrollbar( edit_card_board_root, orient='vertical', command=edit_card_board_dropdown.yview )
-edit_card_board_frame       = ttk.LabelFrame( edit_card_board_dropdown, text="Frame in Canvas", padding=( 5, 5, 5, 5 ) )
+edit_card_board_root                = ttk.LabelFrame( edit_card_root, text="edit card board root" )
+edit_card_board_dropdown            = tk.Canvas( edit_card_board_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
+edit_card_board_scrollbar           = ttk.Scrollbar( edit_card_board_root, orient='vertical', command=edit_card_board_dropdown.yview )
+edit_card_board_frame               = ttk.LabelFrame( edit_card_board_dropdown, text="Frame in Canvas", padding=( 5, 5, 5, 5 ) )
 
 edit_card_board_frame.bind("<Configure>", lambda event: edit_card_board_dropdown.configure(scrollregion=edit_card_board_dropdown.bbox("all")))
 edit_card_board_dropdown.configure( yscrollcommand=edit_card_board_scrollbar.set )
@@ -793,10 +829,10 @@ edit_card_board_dropdown.pack( side="left", fill="both", expand=True )
 edit_card_board_dropdown.create_window((4,4), window=edit_card_board_frame, anchor="nw")
 edit_card_board_scrollbar.pack( side="right", fill="y" )
 
-edit_card_tag_root          = ttk.LabelFrame( edit_card_root, text="edit card tag root" )
-edit_card_tag_dropdown      = tk.Canvas( edit_card_tag_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
-edit_card_tag_scrollbar     = ttk.Scrollbar( edit_card_tag_root, orient='vertical', command=edit_card_tag_dropdown.yview )
-edit_card_tag_frame         = ttk.LabelFrame( edit_card_tag_dropdown, text="Frame in Canvas", padding=( 5, 5, 5, 5 ) )
+edit_card_tag_root                  = ttk.LabelFrame( edit_card_root, text="edit card tag root" )
+edit_card_tag_dropdown              = tk.Canvas( edit_card_tag_root, highlightthickness=0, borderwidth=0, background='#fafafa' )
+edit_card_tag_scrollbar             = ttk.Scrollbar( edit_card_tag_root, orient='vertical', command=edit_card_tag_dropdown.yview )
+edit_card_tag_frame                 = ttk.LabelFrame( edit_card_tag_dropdown, text="Frame in Canvas", padding=( 5, 5, 5, 5 ) )
 
 edit_card_tag_frame.bind("<Configure>", lambda event: edit_card_tag_dropdown.configure(scrollregion=edit_card_tag_dropdown.bbox("all")))
 edit_card_tag_dropdown.configure( yscrollcommand=edit_card_tag_scrollbar.set )
@@ -804,8 +840,8 @@ edit_card_tag_dropdown.pack( side="left", fill="both", expand=True )
 edit_card_tag_dropdown.create_window((4,4), window=edit_card_tag_frame, anchor="nw")
 edit_card_tag_scrollbar.pack( side="right", fill="y" )
 
-edit_card_confirm_button    = ttk.Button( edit_card_root, text="Confirm", command=toggle_edit_card_flag )
-edit_card_cancel_button     = ttk.Button( edit_card_root, text="Cancel", command=toggle_edit_card_flag )
+edit_card_confirm_button            = ttk.Button( edit_card_root, text="Confirm", command=edit_card_confirm )
+edit_card_cancel_button             = ttk.Button( edit_card_root, text="Cancel", command=edit_card_cancel )
 
 edit_card_name_label.grid( row=0, column=0, columnspan=1 )
 edit_card_name_entry.grid( row=1, column=0, columnspan=2 )
@@ -830,29 +866,29 @@ edit_card_cancel_button.grid( row=5, column=1, columnspan=1 )
 # new_project_button    = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right", image=icon )
 # new_project_button.image = icon
 
-new_project_button    = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right" )
-delete_project_button = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
-edit_project_button   = ttk.Button( top_frame, text="edit project", command=edit_project_init )
-new_board_button      = ttk.Button( top_frame, text="new board", command=add_board_init )
-delete_board_button   = ttk.Button( top_frame, text="delete board", command=delete_board_confirm )
-edit_board_button     = ttk.Button( top_frame, text="edit board", command=edit_board_init )
-new_card_button       = ttk.Button( top_frame, text="new card", command=add_card_init )
-tag_name              = tk.StringVar( value=consts.NO_TAG_SELECTED )
-tag_dropdown          = ttk.OptionMenu( top_frame,  tag_name, "", consts.NO_TAG_SELECTED, "something", style="my.TMenubutton", command=lambda event: update_state(root, main_frame) )
+new_project_button                  = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right" )
+delete_project_button               = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
+edit_project_button                 = ttk.Button( top_frame, text="edit project", command=edit_project_init )
+new_board_button                    = ttk.Button( top_frame, text="new board", command=add_board_init )
+delete_board_button                 = ttk.Button( top_frame, text="delete board", command=delete_board_confirm )
+edit_board_button                   = ttk.Button( top_frame, text="edit board", command=edit_board_init )
+new_card_button                     = ttk.Button( top_frame, text="new card", command=add_card_init )
+tag_name                            = tk.StringVar( value=consts.NO_TAG_SELECTED )
+tag_dropdown                        = ttk.OptionMenu( top_frame,  tag_name, "", consts.NO_TAG_SELECTED, "something", style="my.TMenubutton", command=lambda event: update_state(root, main_frame) )
 tag_dropdown[ "menu" ].entryconfigure( 0, font = ( "pointfree", 9,"italic" ) )
 tag_dropdown[ "menu" ].insert_separator( 1 )
 # tag_dropdown = ChecklistCombobox( top_frame, values=("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20") )
 # tag_dropdown[ "state" ] = tk.DISABLED
 
 # disable buttons at start
-new_project_button[ "state" ]    = tk.DISABLED
-delete_project_button[ "state" ] = tk.DISABLED
-edit_project_button[ "state" ]   = tk.DISABLED
-new_board_button[ "state" ]      = tk.DISABLED
-delete_board_button[ "state" ]   = tk.DISABLED
-edit_board_button[ "state" ]     = tk.DISABLED
-new_card_button[ "state" ]       = tk.DISABLED
-tag_dropdown["state"]            = tk.DISABLED
+new_project_button[ "state" ]       = tk.DISABLED
+delete_project_button[ "state" ]    = tk.DISABLED
+edit_project_button[ "state" ]      = tk.DISABLED
+new_board_button[ "state" ]         = tk.DISABLED
+delete_board_button[ "state" ]      = tk.DISABLED
+edit_board_button[ "state" ]        = tk.DISABLED
+new_card_button[ "state" ]          = tk.DISABLED
+tag_dropdown["state"]               = tk.DISABLED
 
 # place widgets in top frame
 new_project_button.grid( row=0, column=0, padx=3, pady=3, sticky="ew" )
@@ -905,10 +941,12 @@ while 1:
     except Exception as e:
         print( e )
         break
+
     if previous_loop_state != current_state:
         update_state( root, main_frame )
         print( "STATE UPDATED" )
     previous_loop_state = current_state.copy( )
+
     if edit_card_flag_prv != edit_card_flag:
         update_internal_state( root, main_frame )
         edit_card_flag_prv = edit_card_flag
