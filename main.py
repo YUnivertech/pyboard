@@ -2,11 +2,10 @@
 #! Fix card destruction
 #! Make Card rendering consistent with other forms
 #! DO NOT DESTROY GLOBAL WIDGETS PLEASE (EVERYTHING INSIDE EDIT CARD BOARD ROOT SHOULD NOT BE DESTROYED!)
+#! Optimize get boards of cards method in db manager
 
 import tkinter as tk
 from tkinter import ttk
-# from PIL import Image, ImageTk
-# from checklistcombobox import ChecklistCombobox
 
 import consts
 import db_manager
@@ -409,6 +408,7 @@ def edit_card_cancel():
     global edit_card_flag
     edit_card_flag  = False
 
+
 def edit_card_confirm():
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
@@ -440,6 +440,19 @@ def edit_card_confirm():
     update_state( root, main_frame )
 
 
+def edit_card_remove():
+    print("REMOVING CARD FROM BOARD")
+    manager.remove_card_from_board( current_state[1], edit_card_uid )
+
+    update_state( root, main_frame )
+
+def edit_card_delete():
+    print("DELETING CARD FROM PROJECT")
+    manager.delete_card( edit_card_uid )
+
+    update_state( root, main_frame )
+
+
 def update_internal_state( _root_window, _main_frame ):
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
@@ -462,12 +475,18 @@ def update_internal_state( _root_window, _main_frame ):
             print("BOARD CARDS")
 
             edit_card_board_root.grid_forget()
+            edit_card_delete_button.grid_forget()
+
+            edit_card_remove_button.grid( row=0, column=2, columnspan=1 )
 
             # display the tags widget
         else:
             print("PROJECT CARDS")
 
             edit_card_tag_root.grid_forget()
+            edit_card_remove_button.grid_forget()
+
+            edit_card_delete_button.grid( row=0, column=2, columnspan=1 )
 
             boards = manager.get_all_boards()
             valid_boards = manager.get_boards_of_card( edit_card_uid )
@@ -840,16 +859,26 @@ edit_card_tag_dropdown.pack( side="left", fill="both", expand=True )
 edit_card_tag_dropdown.create_window((4,4), window=edit_card_tag_frame, anchor="nw")
 edit_card_tag_scrollbar.pack( side="right", fill="y" )
 
-edit_card_confirm_button            = ttk.Button( edit_card_root, text="Confirm", command=edit_card_confirm )
-edit_card_cancel_button             = ttk.Button( edit_card_root, text="Cancel", command=edit_card_cancel )
+edit_card_button_parent             = tk.Frame( edit_card_root )
+
+edit_card_confirm_button            = ttk.Button( edit_card_button_parent, text="Confirm", command=edit_card_confirm )
+edit_card_cancel_button             = ttk.Button( edit_card_button_parent, text="Cancel", command=edit_card_cancel )
+
+edit_card_delete_button             = ttk.Button( edit_card_button_parent, text="Delete", command=edit_card_delete )
+edit_card_remove_button             = ttk.Button( edit_card_button_parent, text="Remove", command=edit_card_remove )
 
 edit_card_name_label.grid( row=0, column=0, columnspan=1 )
 edit_card_name_entry.grid( row=1, column=0, columnspan=2 )
 edit_card_desc_label.grid( row=2, column=0, columnspan=1 )
 edit_card_desc_entry.grid( row=3, column=0, columnspan=2 )
 
-edit_card_confirm_button.grid( row=5, column=0, columnspan=1 )
-edit_card_cancel_button.grid( row=5, column=1, columnspan=1 )
+edit_card_confirm_button.grid( row=0, column=0, columnspan=1 )
+edit_card_cancel_button.grid( row=0, column=1, columnspan=1 )
+
+edit_card_button_parent.grid( row=5, column=0, columnspan=2 )
+
+# edit_card_remove_button.grid( row=0, column=2, columnspan=1 )
+# edit_card_delete_button.grid( row=0, column=2, columnspan=1 )
 
 # conditionally grid either the tags or the boards
 
