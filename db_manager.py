@@ -453,14 +453,15 @@ class DBManager:
         pass
 
     def get_boards_of_card( self, _card_uid ):
-
-        res = set()
-
-        for board_uid in self.get_all_boards_uid():
-            if _card_uid in self.get_cards_uid_in_board( board_uid ):
-                res.add( board_uid )
-
-        return res
+        self.cursor.execute( "SELECT `board_uid` FROM `Relations` "
+                                "WHERE `card_uid` = ?;",
+                                ( _card_uid, ) )
+        fetched_data = self.cursor.fetchall( )
+        board_uids       = set( )
+        for data in fetched_data:
+            board_uids.add( data[ 0 ] )
+        consts.dbg( 1, "Class DBManager - function get_boards_of_card - value of board_uids:", board_uids )
+        return board_uids
 
     def stop( self ):
         self.db = None

@@ -1000,7 +1000,7 @@ while 1:
     if previous_loop_state != current_state:
         update_state( root, main_frame )
         print( "STATE UPDATED" )
-    previous_loop_state = current_state.copy( )
+        previous_loop_state = current_state.copy( )
 
     if edit_card_flag_prv != edit_card_flag:
         update_internal_state( root, main_frame )
