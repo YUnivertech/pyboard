@@ -24,7 +24,8 @@ edit_card_flag          = False
 edit_card_flag_prv      = False
 edit_card_uid           = False
 
-# When the edit card flag is enabled, it means the side pop-up should be seen
+tag_dict                = {}
+
 class CardSelectHandler:
 
     def __init__( self, _uid, _widget ):
@@ -412,7 +413,7 @@ def edit_card_cancel():
 def edit_card_confirm():
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
-    global board_checkbox_states, boards
+    global board_checkbox_states, boards, tag_dict
     global edit_card_flag, edit_card_flag_prv, edit_card_uid
     global edit_card_root, edit_card_name_label, edit_card_name_entry, edit_card_desc_label, edit_card_desc_entry, edit_card_confirm_button, edit_card_cancel_button
     global edit_card_board_root
@@ -422,7 +423,13 @@ def edit_card_confirm():
     manager.update_card( edit_card_uid, edit_card_name_entry.get(), edit_card_desc_entry.get(), None )
 
     if current_state[1] is not None:
-        pass
+
+        for tag, entry in tag_dict.items():
+
+            new_val = entry.get().strip()
+
+            if new_val:
+                manager.update_card_tag_value( current_state[1], edit_card_uid, tag, new_val )
 
     else:
         valid_boards = manager.get_boards_of_card( edit_card_uid )
@@ -460,6 +467,7 @@ def update_internal_state( _root_window, _main_frame ):
     global edit_card_flag, edit_card_flag_prv, edit_card_uid
     global edit_card_root, edit_card_name_label, edit_card_name_entry, edit_card_desc_label, edit_card_desc_entry, edit_card_confirm_button, edit_card_cancel_button
     global edit_card_board_root
+    global tag_dict
 
     print( f"NOW EDITING {edit_card_uid}" if edit_card_flag else "NOW NOT EDITING" )
 
@@ -479,7 +487,24 @@ def update_internal_state( _root_window, _main_frame ):
 
             edit_card_remove_button.grid( row=0, column=2, columnspan=1 )
 
-            # display the tags widget
+            tags = manager.get_card_tags( current_state[1], edit_card_uid )
+            if tags[0][0] is None:
+                tags = tags[1:]
+
+            for row, ( tkey, tval ) in enumerate( tags ):
+
+                key_label = ttk.Label( edit_card_tag_frame, text = tkey )
+                val_entry = ttk.Entry( edit_card_tag_frame, validate='all', validatecommand=lambda: tk.BooleanVar( value=bool( val_entry.get().strip() ) )  )
+
+                val_entry.insert( 0, tval )
+
+                key_label.grid( row=2*row, column=0, columnspan=1 )
+                val_entry.grid( row=2*row + 1, column=1, columnspan=3 )
+
+                tag_dict[tkey] = val_entry
+
+            edit_card_tag_root.grid( row=4, column=0, columnspan=2 )
+
         else:
             print("PROJECT CARDS")
 
@@ -506,7 +531,13 @@ def update_internal_state( _root_window, _main_frame ):
         for child in edit_card_board_frame.winfo_children():
             child.grid_forget()
             child.destroy()
-            print("DESTROYING CHECKBUTTONS")
+
+        for child in edit_card_tag_frame.winfo_children():
+            child.grid_forget()
+            child.destroy()
+            print("DESTROYING KEY VALUE PAIRS")
+
+        tag_dict = {}
 
         edit_card_root.grid_forget()
 
@@ -845,7 +876,7 @@ edit_card_board_frame               = ttk.LabelFrame( edit_card_board_dropdown, 
 edit_card_board_frame.bind("<Configure>", lambda event: edit_card_board_dropdown.configure(scrollregion=edit_card_board_dropdown.bbox("all")))
 edit_card_board_dropdown.configure( yscrollcommand=edit_card_board_scrollbar.set )
 edit_card_board_dropdown.pack( side="left", fill="both", expand=True )
-edit_card_board_dropdown.create_window((4,4), window=edit_card_board_frame, anchor="nw")
+edit_card_board_dropdown.create_window((4,4), window=edit_card_board_frame, anchor="center")
 edit_card_board_scrollbar.pack( side="right", fill="y" )
 
 edit_card_tag_root                  = ttk.LabelFrame( edit_card_root, text="edit card tag root" )
@@ -856,7 +887,7 @@ edit_card_tag_frame                 = ttk.LabelFrame( edit_card_tag_dropdown, te
 edit_card_tag_frame.bind("<Configure>", lambda event: edit_card_tag_dropdown.configure(scrollregion=edit_card_tag_dropdown.bbox("all")))
 edit_card_tag_dropdown.configure( yscrollcommand=edit_card_tag_scrollbar.set )
 edit_card_tag_dropdown.pack( side="left", fill="both", expand=True )
-edit_card_tag_dropdown.create_window((4,4), window=edit_card_tag_frame, anchor="nw")
+edit_card_tag_dropdown.create_window((4,4), window=edit_card_tag_frame, anchor="center")
 edit_card_tag_scrollbar.pack( side="right", fill="y" )
 
 edit_card_button_parent             = tk.Frame( edit_card_root )
@@ -867,6 +898,19 @@ edit_card_cancel_button             = ttk.Button( edit_card_button_parent, text=
 edit_card_delete_button             = ttk.Button( edit_card_button_parent, text="Delete", command=edit_card_delete )
 edit_card_remove_button             = ttk.Button( edit_card_button_parent, text="Remove", command=edit_card_remove )
 
+edit_card_new_tag_frame             = ttk.Frame( edit_card_tag_root )
+edit_card_new_tag_key_entry         = ttk.Entry( edit_card_new_tag_frame )
+edit_card_new_tag_val_entry         = ttk.Entry( edit_card_new_tag_frame )
+edit_card_new_tag_add_button        = ttk.Button( edit_card_new_tag_frame, text="Add", command=None )
+edit_card_del_tag_button            = ttk.Button( edit_card_new_tag_frame, text="Delete", command=None )
+
+edit_card_new_tag_key_entry.grid( row=0, column=1 )
+edit_card_new_tag_val_entry.grid( row=0, column=2 )
+edit_card_new_tag_add_button.grid( row=0, column=3 )
+edit_card_del_tag_button.grid( row=0, column=4 )
+
+# edit_card_new_tag_frame.grid( row=1, column=0 )
+
 edit_card_name_label.grid( row=0, column=0, columnspan=1 )
 edit_card_name_entry.grid( row=1, column=0, columnspan=2 )
 edit_card_desc_label.grid( row=2, column=0, columnspan=1 )
@@ -876,24 +920,6 @@ edit_card_confirm_button.grid( row=0, column=0, columnspan=1 )
 edit_card_cancel_button.grid( row=0, column=1, columnspan=1 )
 
 edit_card_button_parent.grid( row=5, column=0, columnspan=2 )
-
-# edit_card_remove_button.grid( row=0, column=2, columnspan=1 )
-# edit_card_delete_button.grid( row=0, column=2, columnspan=1 )
-
-# conditionally grid either the tags or the boards
-
-# edit_card_confirm_button.grid( row=-1, column=0, columnspan=1 )
-# edit_card_cancel_button.grid( row=-1, column=1, columnspan=1 )
-
-# TEMPORARY WORKAROUND SO THAT MAIN FRAME IS SHOWN
-# temp_button = ttk.Button( main_frame, text="temp button", command=lambda: print( manager.db, "\nPrevious loop state:", previous_loop_state, "\nPrevious state:", previous_state, "\nCurrent state:", current_state, tag_name.get() ) )
-# temp_button = ttk.Button( main_frame, text="temp button", command=lambda: column_canvas.configure( width=frame_for_canvas.winfo_width() + 2 ) )
-# temp_button.grid( row=0, column=0, padx=3, pady=3, sticky="ew" )
-
-# widgets in the top frame
-# icon = tk.PhotoImage(file="C:\\Users\\vikas\\Documents\\Akshaj\\Akshaj_python\\pyboard\\theme\\light\\arrow-down.png")
-# new_project_button    = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right", image=icon )
-# new_project_button.image = icon
 
 new_project_button                  = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right" )
 delete_project_button               = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
