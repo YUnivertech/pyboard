@@ -604,7 +604,9 @@ def update_state( _root_window, _main_frame ):
     edit_card_flag = False
 
     state_handled = False
+
     tag_dropdown["state"]            = tk.DISABLED
+    new_card_button[ "state" ]       = tk.DISABLED
 
     if previous_loop_state[ 1 ] != current_state[ 1 ]:
         tag_name.set( consts.NO_TAG_SELECTED )
@@ -622,6 +624,7 @@ def update_state( _root_window, _main_frame ):
         new_board_button[ "state" ]      = tk.DISABLED
         edit_board_button[ "state" ]     = tk.DISABLED
         delete_board_button[ "state" ]   = tk.DISABLED
+
     elif current_state[ 2 ] == consts.NEW_PROJECT_FORM:
         state_handled = True
         # update button states
