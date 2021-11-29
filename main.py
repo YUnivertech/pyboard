@@ -2,7 +2,6 @@
 #! Fix card destruction
 #! Make Card rendering consistent with other forms
 #! DO NOT DESTROY GLOBAL WIDGETS PLEASE (EVERYTHING INSIDE EDIT CARD BOARD ROOT SHOULD NOT BE DESTROYED!)
-#! Optimize get boards of cards method in db manager
 
 import tkinter as tk
 from tkinter import ttk
@@ -459,8 +458,42 @@ def edit_card_delete():
 
     update_state( root, main_frame )
 
+def add_new_tag():
 
-def update_internal_state( _root_window, _main_frame ):
+    print("ADD CARD TAG")
+
+    global edit_card_new_tag_key_entry, edit_card_new_tag_val_entry, edit_card_flag
+
+    tag_name = edit_card_new_tag_key_entry.get()
+    tag_value = edit_card_new_tag_val_entry.get()
+
+    manager.add_card_tag( current_state[1], edit_card_uid, tag_name, tag_value )
+
+    edit_card_new_tag_key_entry.delete( 0, "end" )
+    edit_card_new_tag_val_entry.delete( 0, "end" )
+
+    update_state( root, main_frame )
+    edit_card_flag = True
+    update_internal_state()
+
+def del_old_tag():
+
+    print("DELETING CARD TAG")
+
+    global edit_card_new_tag_key_entry, edit_card_new_tag_val_entry, edit_card_flag
+
+    tag_name = edit_card_new_tag_key_entry.get()
+
+    manager.delete_card_tag( current_state[1], edit_card_uid, tag_name )
+
+    edit_card_new_tag_key_entry.delete( 0, "end" )
+    edit_card_new_tag_val_entry.delete( 0, "end" )
+
+    update_state( root, main_frame )
+    edit_card_flag = True
+    update_internal_state()
+
+def update_internal_state():
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
     global board_checkbox_states, boards
@@ -470,6 +503,24 @@ def update_internal_state( _root_window, _main_frame ):
     global tag_dict
 
     print( f"NOW EDITING {edit_card_uid}" if edit_card_flag else "NOW NOT EDITING" )
+
+    #!
+
+    edit_card_name_entry.delete( 0, "end" )
+    edit_card_desc_entry.delete( 0, "end" )
+
+    for child in edit_card_board_frame.winfo_children():
+        child.grid_forget()
+        child.destroy()
+
+    for child in edit_card_tag_frame.winfo_children():
+        child.grid_forget()
+        child.destroy()
+        print("DESTROYING KEY VALUE PAIRS")
+
+    tag_dict = {}
+
+    edit_card_root.grid_forget()
 
     if edit_card_flag:
 
@@ -503,12 +554,14 @@ def update_internal_state( _root_window, _main_frame ):
 
                 tag_dict[tkey] = val_entry
 
-            edit_card_tag_root.grid( row=4, column=0, columnspan=2 )
+            edit_card_tag_root.grid( row=5, column=0, columnspan=2 )
+            edit_card_new_tag_frame.grid( row=4, column=0, columnspan=2, padx=3, pady=3 )
 
         else:
             print("PROJECT CARDS")
 
             edit_card_tag_root.grid_forget()
+            edit_card_new_tag_frame.grid_forget()
             edit_card_remove_button.grid_forget()
 
             edit_card_delete_button.grid( row=0, column=2, columnspan=1 )
@@ -523,23 +576,23 @@ def update_internal_state( _root_window, _main_frame ):
 
             edit_card_board_root.grid( row=4, column=0, columnspan=2 )
 
-    else:
+    # else:
 
-        edit_card_name_entry.delete( 0, "end" )
-        edit_card_desc_entry.delete( 0, "end" )
+    #     edit_card_name_entry.delete( 0, "end" )
+    #     edit_card_desc_entry.delete( 0, "end" )
 
-        for child in edit_card_board_frame.winfo_children():
-            child.grid_forget()
-            child.destroy()
+    #     for child in edit_card_board_frame.winfo_children():
+    #         child.grid_forget()
+    #         child.destroy()
 
-        for child in edit_card_tag_frame.winfo_children():
-            child.grid_forget()
-            child.destroy()
-            print("DESTROYING KEY VALUE PAIRS")
+    #     for child in edit_card_tag_frame.winfo_children():
+    #         child.grid_forget()
+    #         child.destroy()
+    #         print("DESTROYING KEY VALUE PAIRS")
 
-        tag_dict = {}
+    #     tag_dict = {}
 
-        edit_card_root.grid_forget()
+    #     edit_card_root.grid_forget()
 
 
 def update_state( _root_window, _main_frame ):
@@ -898,18 +951,17 @@ edit_card_cancel_button             = ttk.Button( edit_card_button_parent, text=
 edit_card_delete_button             = ttk.Button( edit_card_button_parent, text="Delete", command=edit_card_delete )
 edit_card_remove_button             = ttk.Button( edit_card_button_parent, text="Remove", command=edit_card_remove )
 
-edit_card_new_tag_frame             = ttk.Frame( edit_card_tag_root )
+edit_card_new_tag_frame             = ttk.LabelFrame( edit_card_root, text="Add and Del tags", padding=( 5, 5, 5, 5 ) )
 edit_card_new_tag_key_entry         = ttk.Entry( edit_card_new_tag_frame )
 edit_card_new_tag_val_entry         = ttk.Entry( edit_card_new_tag_frame )
-edit_card_new_tag_add_button        = ttk.Button( edit_card_new_tag_frame, text="Add", command=None )
-edit_card_del_tag_button            = ttk.Button( edit_card_new_tag_frame, text="Delete", command=None )
+edit_card_new_tag_add_button        = ttk.Button( edit_card_new_tag_frame, text="Add", command=add_new_tag )
+edit_card_del_tag_button            = ttk.Button( edit_card_new_tag_frame, text="Delete", command=del_old_tag )
 
 edit_card_new_tag_key_entry.grid( row=0, column=1 )
 edit_card_new_tag_val_entry.grid( row=0, column=2 )
 edit_card_new_tag_add_button.grid( row=0, column=3 )
 edit_card_del_tag_button.grid( row=0, column=4 )
 
-# edit_card_new_tag_frame.grid( row=1, column=0 )
 
 edit_card_name_label.grid( row=0, column=0, columnspan=1 )
 edit_card_name_entry.grid( row=1, column=0, columnspan=2 )
@@ -919,7 +971,7 @@ edit_card_desc_entry.grid( row=3, column=0, columnspan=2 )
 edit_card_confirm_button.grid( row=0, column=0, columnspan=1 )
 edit_card_cancel_button.grid( row=0, column=1, columnspan=1 )
 
-edit_card_button_parent.grid( row=5, column=0, columnspan=2 )
+edit_card_button_parent.grid( row=6, column=0, columnspan=2 )
 
 new_project_button                  = ttk.Button( top_frame, text="new project", command=add_project_init, compound = "right" )
 delete_project_button               = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
@@ -1003,7 +1055,7 @@ while 1:
         previous_loop_state = current_state.copy( )
 
     if edit_card_flag_prv != edit_card_flag:
-        update_internal_state( root, main_frame )
+        update_internal_state()
         edit_card_flag_prv = edit_card_flag
 
 manager.stop( )
