@@ -1,8 +1,3 @@
-
-#! Fix card destruction
-#! Make Card rendering consistent with other forms
-#! DO NOT DESTROY GLOBAL WIDGETS PLEASE (EVERYTHING INSIDE EDIT CARD BOARD ROOT SHOULD NOT BE DESTROYED!)
-
 import tkinter as tk
 from tkinter import ttk
 
@@ -28,57 +23,60 @@ tag_dict                = {}
 class CardSelectHandler:
 
     def __init__( self, _uid, _widget ):
-        self.uid    = _uid
-        self.widget = _widget
+        self.uid        = _uid
+        self.widget     = _widget
 
     def __call__( self, *params ):
 
         global edit_card_flag, edit_card_flag_prv, edit_card_uid
-        # print( f"CLICKED ON CARD {manager.get_card( self.uid )}" )
-        edit_card_flag = not edit_card_flag
-        edit_card_uid = self.uid
+
+        edit_card_flag  = not edit_card_flag
+        edit_card_uid   = self.uid
 
 
 def generate_card( card_uid, name, description, master, _canvas ):
+
     card_frame              = ttk.LabelFrame( master=master, text="", padding=( 5, 0, 5, 5 ) )
     name_label              = ttk.Label( master=card_frame, text=name )
-    description_label       = ttk.Label( master=card_frame, text=description)
+    description_label       = ttk.Label( master=card_frame, text=description )
+
+    handler                 = CardSelectHandler( card_uid, master )
 
     name_label.grid( row=0, column=0, padx=5, pady=5, sticky="w" )
     description_label.grid( row=2, column=0, padx=5, pady=5, sticky="w" )
-
-    handler = CardSelectHandler( card_uid, master )
-
     card_frame.bind( consts.DOUBLE_LEFT_CLICK, handler )
 
     for child in card_frame.winfo_children():
-        child.bind( consts.VERTICAL_MOUSE_MOTION, lambda event: _canvas.yview_scroll( -1 * (event.delta // 120), "units" ) )
+        child.bind( consts.VERTICAL_MOUSE_MOTION, lambda event : _canvas.yview_scroll( ( event.delta // consts.deltaFactor ), "units" ) )
         child.bind( consts.DOUBLE_LEFT_CLICK, handler )
 
     return card_frame
 
 
 def generate_column( _name, _cards, _cards_frame ):
-    column_frame = ttk.LabelFrame( _cards_frame, text=_name, labelanchor="n", padding=(5, 5, 1, 5) )
-    column_canvas = tk.Canvas( column_frame, borderwidth=0, background="#fafafa" )
-    column_scrollbar = ttk.Scrollbar( column_frame, orient="vertical", command=column_canvas.yview )
+
+    column_frame        = ttk.LabelFrame( _cards_frame, text=_name, labelanchor="n", padding=(5, 5, 1, 5) )
+    column_canvas       = tk.Canvas( column_frame, borderwidth=0, background="#fafafa" )
+    column_scrollbar    = ttk.Scrollbar( column_frame, orient="vertical", command=column_canvas.yview )
+    frame_in_canvas     = ttk.LabelFrame( column_canvas, text="Frame in canvas", padding=(5, 5, 5, 5) )
+
     column_canvas.configure( yscrollcommand=column_scrollbar.set )
-    frame_in_canvas = ttk.LabelFrame( column_canvas, text="Frame in canvas", padding=(5, 5, 5, 5) )
 
     for r, card in enumerate( _cards ):
-        card_frame = generate_card( card[ 0 ], card[ 1 ], card[ 2 ], frame_in_canvas, column_canvas )
+        card_frame  = generate_card( card[ 0 ], card[ 1 ], card[ 2 ], frame_in_canvas, column_canvas )
         card_frame.grid( row=r, column=0, padx=5, pady=5, sticky="news" )
-        card_frame.bind( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( -1 * (event.delta // 120), "units" ) )
+        card_frame.bind( consts.VERTICAL_MOUSE_MOTION, lambda event : column_canvas.yview_scroll( ( event.delta // consts.deltaFactor ) , "units" ) )
 
     column_canvas.bind( "<Configure>", lambda event: column_canvas.itemconfig( "frame", width=column_canvas.winfo_width( ) - 5 ) )
-    column_canvas.bind( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( -1 * (event.delta // 120), "units" ) )
+    column_canvas.bind( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( ( event.delta // consts.deltaFactor ), "units" ) )
     frame_in_canvas.bind( "<Configure>", lambda event: column_canvas.configure( scrollregion=column_canvas.bbox( "all" ) ) )
-    frame_in_canvas.bind( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( -1 * (event.delta // 120), "units" ) )
-    # column_frame.bind_all( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( -1 * (event.delta // 120), "units" ) )
+    frame_in_canvas.bind( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( ( event.delta // consts.deltaFactor ), "units" ) )
+    # column_frame.bind_all( consts.VERTICAL_MOUSE_MOTION, lambda event: column_canvas.yview_scroll( ( event.delta // consts.deltaFactor )), "units" ) )
     frame_in_canvas.columnconfigure( 0, weight=1 )
     column_canvas.create_window( (0, 0), window=frame_in_canvas, anchor="n", tags="frame" )
     column_scrollbar.pack( side="right", fill="y" )
     column_canvas.pack( side="left", fill="both", expand=True )
+
     return column_frame
 
 
@@ -89,27 +87,31 @@ def connect( _username, _hostname, _password ):
 
 
 def tree_click( _event ):
+
     global current_state, previous_state
 
     iid  = tree_v.selection( )[ 0 ]
 
     if iid[ 0 ] == 'p':
         project_name        = iid[ 1: ]
-        manager.use_project( project_name )
         previous_state      = current_state.copy()
         current_state       = [ project_name, None, None ]
-        print( "SWITCHING PROJECT TO {}".format( project_name ) )
+
+        manager.use_project( project_name )
+
     else:
         board_uid           = iid.partition( " " )[ 0 ]
         project_name        = iid.partition( " " )[ 2 ]
-        if project_name != current_state[ 0 ]:
-            manager.use_project( project_name )
+        cur_project_name    = current_state[ 0 ]
         previous_state      = current_state.copy( )
         current_state       = [ project_name, board_uid, None ]
-        print( "SWITCHING BOARD TO {}".format( manager.get_board_name( int( board_uid ) ) ) )
+
+        if project_name != cur_project_name:
+            manager.use_project( project_name )
 
 
 def add_project_init( ):
+
     global current_state, previous_state
 
     previous_state     = current_state.copy( )
@@ -117,6 +119,7 @@ def add_project_init( ):
 
 
 def add_project_confirm( ):
+
     global current_state, previous_state
     global add_project_form, add_project_name_label, add_project_description_label, add_project_name_entry, add_project_description_entry, add_project_warning_label, add_project_cancel_button, add_project_confirm_button
 
@@ -142,6 +145,7 @@ def add_project_confirm( ):
 
         previous_state = current_state.copy( )
         current_state  = [ name, None, None ]
+
     except Exception as e:
         print( e )
         add_project_warning_label.configure( text="A PROJECT WITH THIS NAME ALREADY EXISTS!" )
@@ -602,8 +606,15 @@ def update_state( _root_window, _main_frame ):
     global edit_card_flag, edit_card_flag_prv, edit_card_uid
 
     edit_card_flag = False
-
     state_handled = False
+
+    # Disable all buttons and dropdown
+    new_project_button[ "state" ]    = tk.DISABLED
+    delete_project_button[ "state" ] = tk.DISABLED
+    edit_project_button[ "state" ]   = tk.DISABLED
+    new_board_button[ "state" ]      = tk.DISABLED
+    edit_board_button[ "state" ]     = tk.DISABLED
+    delete_board_button[ "state" ]   = tk.DISABLED
 
     tag_dropdown["state"]            = tk.DISABLED
     new_card_button[ "state" ]       = tk.DISABLED
@@ -612,43 +623,26 @@ def update_state( _root_window, _main_frame ):
         tag_name.set( consts.NO_TAG_SELECTED )
 
     for child in main_frame.winfo_children():
-        # print( child.winfo_name( ) )
         child.grid_forget( )
 
     if current_state == [ None, None, None ]:
         state_handled = True
-        # update button states
         new_project_button[ "state" ]    = tk.NORMAL
-        delete_project_button[ "state" ] = tk.DISABLED
-        edit_project_button[ "state" ]   = tk.DISABLED
-        new_board_button[ "state" ]      = tk.DISABLED
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
 
     elif current_state[ 2 ] == consts.NEW_PROJECT_FORM:
         state_handled = True
-        # update button states
-        new_project_button[ "state" ]    = tk.DISABLED
-        delete_project_button[ "state" ] = tk.DISABLED
-        edit_project_button[ "state" ]   = tk.DISABLED
-        new_board_button[ "state" ]      = tk.DISABLED
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
-
         add_project_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
+
     elif current_state[ 0 ] is not None and current_state[ 1 ] is None and current_state[ 2 ] is None:        # Only a project is selected
         state_handled = True
-        # update button states
         new_project_button[ "state" ]    = tk.NORMAL
         delete_project_button[ "state" ] = tk.NORMAL
         edit_project_button[ "state" ]   = tk.NORMAL
         new_board_button[ "state" ]      = tk.NORMAL
         new_card_button[ "state" ]       = tk.NORMAL
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
 
-        cards_frame = ttk.LabelFrame( _main_frame, text="Cards frame", padding=(5, 5, 5, 5) )
-        all_cards_column = generate_column( "All Cards", manager.get_all_cards( ), cards_frame )
+        cards_frame         = ttk.LabelFrame( _main_frame, text="Cards frame", padding=(5, 5, 5, 5) )
+        all_cards_column    = generate_column( "All Cards", manager.get_all_cards( ), cards_frame )
         all_cards_column.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
         cards_frame.rowconfigure( 0, weight=1 )
         cards_frame.columnconfigure( 0, weight=1 )
@@ -658,13 +652,13 @@ def update_state( _root_window, _main_frame ):
 
     elif current_state[ 0 ] is not None and current_state[ 1 ] is not None and current_state[ 2 ] is None:      # A project and a board is selected
         state_handled = True
-        # update button states
         new_project_button[ "state" ]    = tk.NORMAL
         delete_project_button[ "state" ] = tk.NORMAL
         edit_project_button[ "state" ]   = tk.NORMAL
         new_board_button[ "state" ]      = tk.NORMAL
         edit_board_button[ "state" ]     = tk.NORMAL
         delete_board_button[ "state" ]   = tk.NORMAL
+
         new_card_button[ "state" ]       = tk.NORMAL
         tag_dropdown["state"]            = tk.NORMAL
 
@@ -679,57 +673,27 @@ def update_state( _root_window, _main_frame ):
             cards_frame.columnconfigure( 0, weight=1 )
         else:
             grouped_cards = manager.get_board_grouped_cards( current_state[ 1 ], tag_name.get( ) )
-            j = 0
-            for tag_value in grouped_cards:
+            for j, tag_value in enumerate( grouped_cards ):
                 column = generate_column( tag_value, grouped_cards[ tag_value ], cards_frame )
                 column.grid( row=0, column=j, padx=5, pady=5, sticky="news")
                 cards_frame.columnconfigure( j, weight=1, minsize=250 )
-                j += 1
         cards_frame.rowconfigure( 0, weight=1 )
         cards_frame.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
         # print("hello:", root.winfo_width())
     elif current_state[ 0 ] is not None and current_state[ 1 ] is not None and current_state[ 2 ] == consts.EDIT_BOARD_FORM:
         state_handled = True
-        # update button states
-        new_project_button[ "state" ]    = tk.DISABLED
-        delete_project_button[ "state" ] = tk.DISABLED
-        edit_project_button[ "state" ]   = tk.DISABLED
-        new_board_button[ "state" ]      = tk.DISABLED
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
-
         edit_board_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
+
     elif current_state[ 0 ] is not None and current_state[ 2 ] == consts.EDIT_PROJECT_FORM:
         state_handled = True
-        # update button states
-        new_project_button[ "state" ]    = tk.DISABLED
-        delete_project_button[ "state" ] = tk.DISABLED
-        edit_project_button[ "state" ]   = tk.DISABLED
-        new_board_button[ "state" ]      = tk.DISABLED
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
-
         edit_project_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
+
     elif current_state[ 0 ] is not None and current_state[ 2 ] == consts.NEW_BOARD_FORM:
         state_handled = True
-        # update button states
-        new_project_button[ "state" ]    = tk.DISABLED
-        delete_project_button[ "state" ] = tk.DISABLED
-        edit_project_button[ "state" ]   = tk.DISABLED
-        new_board_button[ "state" ]      = tk.DISABLED
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
-
         add_board_form.grid( row=0, column=0, padx=5, pady=5, sticky="news" )
+
     elif current_state[ 0 ] is not None and current_state[ 2 ] == consts.NEW_CARD_FORM:
         state_handled = True
-        # update button states
-        new_project_button[ "state" ]    = tk.DISABLED
-        delete_project_button[ "state" ] = tk.DISABLED
-        edit_project_button[ "state" ]   = tk.DISABLED
-        new_board_button[ "state" ]      = tk.DISABLED
-        edit_board_button[ "state" ]     = tk.DISABLED
-        delete_board_button[ "state" ]   = tk.DISABLED
 
         # Populate dropdown of board checkboxes in canvas
         boards                  = manager.get_all_boards()
@@ -748,7 +712,6 @@ def update_state( _root_window, _main_frame ):
         print("STATE IS NOT HANDLED")
         print("Previous state:", previous_state)
         print("Current state:", current_state)
-
 
 # Main
 
