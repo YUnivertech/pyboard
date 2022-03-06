@@ -32,6 +32,7 @@ class DBManager:
         else:
             self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
             self.conn   = sqlite3.connect( self.db )
+            self.conn.execute( "PRAGMA foreign_keys = 1" )  # Only for SQLite as foreign key check is disabled by default in SQLite
             self.cursor = self.conn.cursor( )
         # return True
 
@@ -59,6 +60,7 @@ class DBManager:
         else:
             self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
             self.conn   = sqlite3.connect( self.db )
+            self.conn.execute( "PRAGMA foreign_keys = 1" )  # Only for SQLite as foreign key check is disabled by default in SQLite
             self.cursor = self.conn.cursor( )
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Cards'"
                                     "( "
@@ -304,6 +306,7 @@ class DBManager:
                                 ( _board_uid, _tag_name ) )
         fetched_data  = self.cursor.fetchall( )
         grouped_cards = { }
+        print(fetched_data)
         for i in fetched_data:
             self.cursor.execute( "SELECT `Cards`.`uid`, `Cards`.`name`, `Cards`.`description`, `Cards`.`color` FROM `Cards`, `Relations` "
                                     "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = ? AND `Relations`.`tag_name` = ? AND `Relations`.`tag_value` = ?;",
@@ -312,6 +315,7 @@ class DBManager:
             cards = fetched_data_2
             grouped_cards[ i[ 0 ] ] = cards
         consts.dbg( 1, "Class DBManager - function get_board_grouped_cards - value of grouped_cards:", grouped_cards )
+        print(grouped_cards)
         return grouped_cards
 
     def get_board( self, _board_uid ):
@@ -367,6 +371,17 @@ class DBManager:
             tag_names.append( i[ 0 ] )
         consts.dbg( 1, "Class DBManager - function get_board_tag_names - value of tag_names:", tag_names )
         return tag_names
+
+    def get_tag_values_of_tag_key( self, _board_uid, _tag_name ):
+        self.cursor.execute( "SELECT DISTINCT `tag_value` FROM `Relations` "
+                                "WHERE `board_uid` = ? AND `tag_name` = ?;",
+                                ( _board_uid, _tag_name ) )
+        fetched_data  = self.cursor.fetchall( )
+        tag_values    = [ ]
+        for i in fetched_data:
+            tag_values.append( i[ 0 ] )
+        consts.dbg( 1, "Class DBManager - function get_board_tag_names - value of tag_values:", tag_values )
+        return tag_values
 
     def get_card( self, _card_uid ):
         self.cursor.execute( "SELECT `name`, `description`, `color` FROM `Cards` "
