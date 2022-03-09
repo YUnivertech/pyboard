@@ -55,7 +55,7 @@ class AddProjectForm( ttk.LabelFrame ):
         self.name_label = ttk.Label( self, text="Name: " )
         self.description_label = ttk.Label( self, text="Desc: " )
         self.name_entry = ttk.Entry( self )
-        self.description_entry = ttk.Entry( self )
+        self.desc_entry = ttk.Entry( self )
         self.warning_label = ttk.Label( self, text="" )
         self.cancel_button = ttk.Button( self, text="Cancel", command=self.cancel )
         self.confirm_button = ttk.Button( self, text="Confirm", command=self.confirm )
@@ -63,7 +63,7 @@ class AddProjectForm( ttk.LabelFrame ):
         self.name_label.grid( row=0, column=0, padx=3, pady=3 )
         self.name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan=3 )
         self.description_label.grid( row=1, column=0, padx=3, pady=3 )
-        self.description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
+        self.desc_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
         self.cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan=2 )
         self.confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan=2 )
         self.warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
@@ -72,8 +72,8 @@ class AddProjectForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         # clear text boxes
-        self.name_entry.delete( 0, "end" )
-        self.description_entry.delete( 0, "end" )
+        self.name_entry.delete( 0, tk.END )
+        self.desc_entry.delete( 0, tk.END )
 
         # clear warning label
         self.warning_label.configure( text='' )
@@ -87,9 +87,9 @@ class AddProjectForm( ttk.LabelFrame ):
 
         # get name and description as entered by user and clear text boxes
         name = self.name_entry.get( ).strip( )
-        self.name_entry.insert( 0, '' )
-        desc = self.description_entry.get( ).strip( )
-        self.description_entry.insert( 0, '' )
+        self.name_entry.delete( 0, tk.END )
+        desc = self.desc_entry.get( ).strip( )
+        self.desc_entry.delete( 0, tk.END )
 
         try:
             # create project
@@ -99,8 +99,8 @@ class AddProjectForm( ttk.LabelFrame ):
             tree_v.insert( '', 'end', iid='p' + name, text=name )
 
             # clear text entry widgets
-            self.name_entry.delete( 0, "end" )
-            self.description_entry.delete( 0, "end" )
+            self.name_entry.delete( 0, tk.END )
+            self.desc_entry.delete( 0, tk.END )
 
             # clear warning label
             self.warning_label.configure( text='' )
@@ -118,7 +118,7 @@ class EditProjectForm( ttk.LabelFrame ):
         self.name_label = ttk.Label( self, text="Name: " )
         self.description_label = ttk.Label( self, text="Desc: " )
         self.name_entry = ttk.Entry( self )
-        self.description_entry = ttk.Entry( self )
+        self.desc_entry = ttk.Entry( self )
         self.warning_label = ttk.Label( self, text="" )
         self.cancel_button = ttk.Button( self, text="Cancel", command=self.cancel )
         self.confirm_button = ttk.Button( self, text="Confirm", command=self.confirm )
@@ -126,7 +126,7 @@ class EditProjectForm( ttk.LabelFrame ):
         self.name_label.grid( row=0, column=0, padx=3, pady=3 )
         self.name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan=3 )
         self.description_label.grid( row=1, column=0, padx=3, pady=3 )
-        self.description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
+        self.desc_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
         self.cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan=2 )
         self.confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan=2 )
         self.warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
@@ -136,8 +136,8 @@ class EditProjectForm( ttk.LabelFrame ):
 
         # clear entries
         self.name_entry.config( state='normal' )
-        self.name_entry.delete( 0, 'end' )
-        self.description_entry.delete( 0, 'end' )
+        self.name_entry.insert( 0, 'end' )
+        self.desc_entry.insert( 0, 'end' )
 
         temp_state = previous_state.copy( )
         previous_state = current_state.copy( )
@@ -147,12 +147,12 @@ class EditProjectForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         # update the description
-        manager.update_project_info( self.description_entry.get( ).strip( ) )
+        manager.update_project_info( self.desc_entry.get( ).strip( ) )
 
         # clear entries
         self.name_entry.config( state='normal' )
-        self.name_entry.delete( 0, 'end' )
-        self.description_entry.delete( 0, 'end' )
+        self.name_entry.insert( 0, 'end' )
+        self.desc_entry.insert( 0, 'end' )
 
         previous_state = current_state.copy( )
         current_state[ 2 ] = None
@@ -164,7 +164,7 @@ class AddBoardForm( ttk.LabelFrame ):
         self.name_label = ttk.Label( self, text="Name: " )
         self.description_label = ttk.Label( self, text="Desc: " )
         self.name_entry = ttk.Entry( self )
-        self.description_entry = ttk.Entry( self )
+        self.desc_entry = ttk.Entry( self )
         self.warning_label = ttk.Label( self, text="" )
         self.cancel_button = ttk.Button( self, text="Cancel", command=self.cancel )
         self.confirm_button = ttk.Button( self, text="Confirm", command=self.confirm )
@@ -172,7 +172,7 @@ class AddBoardForm( ttk.LabelFrame ):
         self.name_label.grid( row=0, column=0, padx=3, pady=3 )
         self.name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan=3 )
         self.description_label.grid( row=1, column=0, padx=3, pady=3 )
-        self.description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
+        self.desc_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
         self.cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan=2 )
         self.confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan=2 )
         self.warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
@@ -181,8 +181,8 @@ class AddBoardForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         # clear text boxes
-        self.name_entry.delete( 0, "end" )
-        self.description_entry.delete( 0, "end" )
+        self.name_entry.delete( 0, tk.END )
+        self.desc_entry.delete( 0, tk.END )
 
         # clear warning label
         self.warning_label.configure( text='' )
@@ -196,9 +196,9 @@ class AddBoardForm( ttk.LabelFrame ):
 
         # get name, description and iid as entered by user and clear text boxes
         name = self.name_entry.get( ).strip( )
-        self.name_entry.insert( 0, '' )
-        desc = self.description_entry.get( ).strip( )
-        self.description_entry.insert( 0, '' )
+        self.name_entry.delete( 0, tk.END )
+        desc = self.desc_entry.get( ).strip( )
+        self.desc_entry.delete( 0, tk.END )
         iid = manager.get_next_board_uid( )
 
         # get list of existing boards and check if name is already present
@@ -213,8 +213,8 @@ class AddBoardForm( ttk.LabelFrame ):
             tree_v.insert( 'p' + str( current_state[ 0 ] ), 'end', iid=(str( iid ) + " " + str( current_state[ 0 ] )), text=name )
 
             # clear text entry widgets
-            self.name_entry.delete( 0, "end" )
-            self.description_entry.delete( 0, "end" )
+            self.name_entry.delete( 0, tk.END )
+            self.desc_entry.delete( 0, tk.END )
 
             # clear warning label
             self.warning_label.configure( text='' )
@@ -230,7 +230,7 @@ class EditBoardForm( ttk.LabelFrame ):
         self.name_label = ttk.Label( self, text="Name: " )
         self.description_label = ttk.Label( self, text="Desc: " )
         self.name_entry = ttk.Entry( self )
-        self.description_entry = ttk.Entry( self )
+        self.desc_entry = ttk.Entry( self )
         self.warning_label = ttk.Label( self, text="" )
         self.cancel_button = ttk.Button( self, text="Cancel", command=self.cancel )
         self.confirm_button = ttk.Button( self, text="Confirm", command=self.confirm )
@@ -238,7 +238,7 @@ class EditBoardForm( ttk.LabelFrame ):
         self.name_label.grid( row=0, column=0, padx=3, pady=3 )
         self.name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan=3 )
         self.description_label.grid( row=1, column=0, padx=3, pady=3 )
-        self.description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
+        self.desc_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3 )
         self.cancel_button.grid( row=2, column=0, padx=3, pady=3, columnspan=2 )
         self.confirm_button.grid( row=2, column=2, padx=3, pady=3, columnspan=2 )
         self.warning_label.grid( row=3, column=0, padx=3, pady=3, columnspan=4 )
@@ -247,8 +247,8 @@ class EditBoardForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         # clear text boxes
-        self.name_entry.delete( 0, 'end' )
-        self.description_entry.delete( 0, 'end' )
+        self.name_entry.insert( 0, 'end' )
+        self.desc_entry.insert( 0, 'end' )
 
         # clear warning label
         self.warning_label.configure( text='' )
@@ -261,7 +261,7 @@ class EditBoardForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         name = self.name_entry.get( ).strip( )
-        desc = self.description_entry.get( ).strip( )
+        desc = self.desc_entry.get( ).strip( )
         iid = int( current_state[ 1 ] )
 
         existing_boards = set( map( lambda event: event[ 1 ], manager.get_all_boards( ) ) )
@@ -276,8 +276,8 @@ class EditBoardForm( ttk.LabelFrame ):
             tree_v.item( (str( current_state[ 1 ] ) + " " + str( current_state[ 0 ] )), text=name )
 
             # clear text entry widgets
-            self.name_entry.delete( 0, "end" )
-            self.description_entry.delete( 0, "end" )
+            self.name_entry.delete( 0, tk.END )
+            self.desc_entry.delete( 0, tk.END )
 
             # clear warning label
             self.warning_label.configure( text='' )
@@ -292,7 +292,7 @@ class AddCardForm( ttk.LabelFrame ):
         self.name_label = ttk.Label( self, text="Name: " )
         self.description_label = ttk.Label( self, text="Desc: " )
         self.name_entry = ttk.Entry( self )
-        self.description_entry = ttk.Entry( self )
+        self.desc_entry = ttk.Entry( self )
         self.cancel_button = ttk.Button( self, text="Cancel", command=self.cancel )
         self.confirm_button = ttk.Button( self, text="Confirm", command=self.confirm )
         self.selection_frame = ttk.LabelFrame( self, text="Select board frame", padding=(5, 5, 5, 5) )
@@ -312,7 +312,7 @@ class AddCardForm( ttk.LabelFrame ):
         self.name_label.grid( row=0, column=0, padx=3, pady=3 )
         self.name_entry.grid( row=0, column=1, padx=3, pady=3, columnspan=3, sticky="ew" )
         self.description_label.grid( row=1, column=0, padx=3, pady=3 )
-        self.description_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3, sticky="ew" )
+        self.desc_entry.grid( row=1, column=1, padx=3, pady=3, columnspan=3, sticky="ew" )
         self.selection_frame.grid( row=2, column=0, padx=3, pady=3, columnspan=4, sticky="ew" )
         self.cancel_button.grid( row=3, column=0, padx=3, pady=3, columnspan=2 )
         self.confirm_button.grid( row=3, column=2, padx=3, pady=3, columnspan=2 )
@@ -320,8 +320,8 @@ class AddCardForm( ttk.LabelFrame ):
     def cancel( self ):
         global current_state, previous_state
 
-        self.name_entry.delete( 0, "end" )
-        self.description_entry.delete( 0, "end" )
+        self.name_entry.delete( 0, tk.END )
+        self.desc_entry.delete( 0, tk.END )
 
         temp_state = previous_state.copy( )
         previous_state = current_state.copy( )
@@ -336,9 +336,9 @@ class AddCardForm( ttk.LabelFrame ):
 
         # get name, description and iid as entered by user and clear text boxes
         name = self.name_entry.get( ).strip( )
-        self.name_entry.insert( 0, '' )
-        desc = self.description_entry.get( ).strip ( )
-        self.description_entry.insert( 0, '' )
+        self.name_entry.delete( 0, tk.END )
+        desc = self.desc_entry.get( ).strip ( )
+        self.desc_entry.delete( 0, tk.END )
         iid = manager.get_next_card_uid( )
 
         # create project
@@ -349,8 +349,8 @@ class AddCardForm( ttk.LabelFrame ):
                 manager.add_card_to_board( board[ 0 ], iid )
 
         # clear text entry widgets
-        self.name_entry.delete( 0, "end" )
-        self.description_entry.delete( 0, "end" )
+        self.name_entry.delete( 0, tk.END )
+        self.desc_entry.delete( 0, tk.END )
 
         previous_state = current_state.copy( )
         # current_state[ 1 ] = str( iid )
@@ -374,7 +374,7 @@ class EditProjectCardForm( ttk.LabelFrame ):
         self.frame_in_canvas = ttk.LabelFrame( self.selection_canvas, text="Frame in Canvas", padding=(5, 5, 5, 5) )
         self.cancel_button = ttk.Button( self, text="Cancel", command=self.cancel )
         self.confirm_button = ttk.Button( self, text="Confirm", command=self.confirm, style="Accent.TButton" )
-        self.delete_button = ttk.Button( self, text="Delete", command=self.delete )
+        self.delete_button = ttk.Button( self, text="insert", command=self.insert )
 
         self.selection_canvas.configure( yscrollcommand=self.selection_scrollbar.set )
         self.frame_in_canvas.bind( "<Configure>", lambda event: self.selection_canvas.configure( width=self.frame_in_canvas.winfo_width( ), height=self.frame_in_canvas.winfo_height( ), scrollregion=self.selection_canvas.bbox( "all" ) ) )
@@ -419,7 +419,7 @@ class EditProjectCardForm( ttk.LabelFrame ):
 
         update_state( root )
 
-    def delete( self ):
+    def insert( self ):
         print( "DELETING CARD FROM PROJECT" )
         manager.delete_card( edit_card_uid )
         update_state( root )
@@ -436,7 +436,7 @@ class EditBoardCardForm( ttk.LabelFrame ):
         self.tag_key_entry = ttk.Combobox( self.edit_tag_frame )
         self.tag_val_entry = ttk.Combobox( self.edit_tag_frame )
         self.new_tag_button = ttk.Button( self.edit_tag_frame, text="Add", command=self.add_tag )
-        self.del_tag_button = ttk.Button( self.edit_tag_frame, text="Delete", command=self.del_tag )
+        self.del_tag_button = ttk.Button( self.edit_tag_frame, text="insert", command=self.del_tag )
         self.tag_frame = ttk.LabelFrame( self, text="edit card tag root" )
         self.tag_canvas = tk.Canvas( self.tag_frame, highlightthickness=0, borderwidth=0, background='#fafafa' )
         self.tag_scrollbar = ttk.Scrollbar( self.tag_frame, orient='vertical', command=self.tag_canvas.yview )
@@ -491,7 +491,7 @@ class EditBoardCardForm( ttk.LabelFrame ):
                 self.tag_val_entry.configure( values=manager.get_tag_values_of_tag_key(current_state[ 1 ], self.tag_key_entry.get( )) )
             else:
                 self.tag_val_entry[ "state" ] = tk.NORMAL
-                self.tag_val_entry.delete( 0, "end" )
+                self.tag_val_entry.delete( 0, tk.END )
                 self.tag_val_entry[ "state" ] = tk.DISABLED
                 self.del_tag_button[ "state" ] = tk.NORMAL
 
@@ -530,8 +530,8 @@ class EditBoardCardForm( ttk.LabelFrame ):
 
         manager.add_card_tag( current_state[ 1 ], edit_card_uid, tag_name, tag_value )
 
-        self.tag_key_entry.delete( 0, "end" )
-        self.tag_val_entry.delete( 0, "end" )
+        self.tag_key_entry.delete( 0, tk.END )
+        self.tag_val_entry.delete( 0, tk.END )
 
         update_state( root )
         edit_card_flag = True
@@ -546,8 +546,8 @@ class EditBoardCardForm( ttk.LabelFrame ):
 
         manager.delete_card_tag( current_state[ 1 ], edit_card_uid, tag_name )
 
-        self.tag_key_entry.delete( 0, "end" )
-        self.tag_val_entry.delete( 0, "end" )
+        self.tag_key_entry.delete( 0, tk.END )
+        self.tag_val_entry.delete( 0, tk.END )
 
         update_state( root )
         edit_card_flag = True
@@ -638,11 +638,11 @@ def add_project_init( ):
 def delete_project_confirm( ):
     global current_state, previous_state
 
-    # delete project for manager
+    # insert project for manager
     manager.delete_current_project( )
 
     # update widget
-    tree_v.delete( 'p' + current_state[ 0 ] )
+    tree_v.insert( 'p' + current_state[ 0 ] )
 
     previous_state = current_state.copy()
     current_state  = [ None, None, None ]
@@ -653,7 +653,7 @@ def edit_project_init( ):
 
     # set default to current name and description
     edit_project_form.name_entry.insert( 0, current_state[ 0 ] )
-    edit_project_form.description_entry.insert( 0, manager.get_project_info( ) )
+    edit_project_form.desc_entry.insert( 0, manager.get_project_info( ) )
     edit_project_form.name_entry.config( state='disabled' )
 
     previous_state     = current_state.copy( )
@@ -668,11 +668,11 @@ def add_board_init( ):
 def delete_board_confirm( ):
     global current_state, previous_state
 
-    # delete board for manager
+    # insert board for manager
     manager.delete_board( current_state[ 1 ] )
 
     # update widget
-    tree_v.delete( ( str( current_state[ 1 ] ) + " " + str( current_state[ 0 ] ) ) )
+    tree_v.insert( ( str( current_state[ 1 ] ) + " " + str( current_state[ 0 ] ) ) )
 
     previous_state     = current_state.copy( )
     current_state[ 1 ] = None
@@ -683,7 +683,7 @@ def edit_board_init( ):
     global edit_board_form
 
     edit_board_form.name_entry.insert( 0, manager.get_board_name( current_state[ 1 ] ) )
-    edit_board_form.description_entry.insert( 0, manager.get_board_description( current_state[ 1 ] ) )
+    edit_board_form.desc_entry.insert( 0, manager.get_board_description( current_state[ 1 ] ) )
 
     previous_state     = current_state.copy( )
     current_state[ 2 ] = consts.EDIT_BOARD_FORM
@@ -695,6 +695,46 @@ def add_card_init( ):
     previous_state     = current_state.copy( )
     current_state[ 2 ] = consts.NEW_CARD_FORM
 
+def clear_all_entries():
+    global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
+    global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form, edit_project_card_form, edit_board_card_form
+    global board_checkbox_states, boards
+    global edit_card_flag, edit_card_flag_prv, edit_card_uid
+
+    print ("Clearing all entries")
+
+    # Clear project form
+    add_project_form.name_entry.delete( 0, tk.END )
+    add_project_form.desc_entry.delete( 0, tk.END )
+    add_project_form.warning_label.configure( text = '' )
+
+    edit_project_form.name_entry.delete( 0, tk.END )
+    edit_project_form.desc_entry.delete( 0, tk.END )
+    edit_project_form.warning_label.configure( text = '' )
+
+    # Clear board form
+    add_board_form.name_entry.delete( 0, tk.END )
+    add_board_form.desc_entry.delete( 0, tk.END )
+    add_board_form.warning_label.configure( text = '' )
+
+    edit_board_form.name_entry.delete( 0, tk.END )
+    edit_board_form.desc_entry.delete( 0, tk.END )
+    edit_board_form.warning_label.configure( text = '' )
+
+    # cClear card form
+    add_card_form.name_entry.delete( 0, tk.END )
+    add_card_form.desc_entry.delete( 0, tk.END )
+
+    add_card_form.name_entry.delete( 0, tk.END )
+    add_card_form.desc_entry.delete( 0, tk.END )
+
+    edit_project_card.name_entry.delete( 0, tk.END )
+    edit_project_card.desc_entry.delete( 0, tk.END )
+
+    edit_board_card.name_entry.delete( 0, tk.END )
+    edit_board_card.desc_entry.delete( 0, tk.END )
+    edit_board_card.desc_entry.delete( 0, tk.END )
+
 def update_internal_state():
     global current_state, previous_state, previous_loop_state, tag_name, tag_dropdown
     global add_project_form, edit_project_form, add_board_form, edit_board_form, add_card_form
@@ -704,11 +744,7 @@ def update_internal_state():
 
     print( f"NOW EDITING {edit_card_uid}" if edit_card_flag else "NOW NOT EDITING" )
 
-    edit_project_card.name_entry.delete( 0, "end" )
-    edit_project_card.desc_entry.delete( 0, "end" )
-    edit_board_card.name_entry.delete( 0, "end" )
-    edit_board_card.desc_entry.delete( 0, "end" )
-
+    clear_all_entries ()
     edit_board_card.card_tag_keys = [ ]
 
     edit_board_card.tag_key_entry.configure(values=[ ])
@@ -792,6 +828,8 @@ def update_state( _root_window ):
 
     tag_dropdown["state"]            = tk.DISABLED
     new_card_button[ "state" ]       = tk.DISABLED
+
+    clear_all_entries ()
 
     if ( previous_loop_state[ 0 ] != current_state[ 0 ] ) or ( previous_loop_state[ 1 ] != current_state[ 1 ] ):
         tag_name.set( consts.NO_TAG_SELECTED )
@@ -967,10 +1005,10 @@ edit_project_card = EditProjectCardForm( main_frame )
 edit_board_card   = EditBoardCardForm( main_frame )
 
 new_project_button                  = ttk.Button( top_frame, text="new project", command=add_project_init )
-delete_project_button               = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
+delete_project_button               = ttk.Button( top_frame, text="insert project", command=delete_project_confirm )
 edit_project_button                 = ttk.Button( top_frame, text="edit project", command=edit_project_init )
 new_board_button                    = ttk.Button( top_frame, text="new board", command=add_board_init )
-delete_board_button                 = ttk.Button( top_frame, text="delete board", command=delete_board_confirm )
+delete_board_button                 = ttk.Button( top_frame, text="insert board", command=delete_board_confirm )
 edit_board_button                   = ttk.Button( top_frame, text="edit board", command=edit_board_init )
 new_card_button                     = ttk.Button( top_frame, text="new card", command=add_card_init )
 tag_name                            = tk.StringVar( value=consts.NO_TAG_SELECTED )
@@ -1075,7 +1113,7 @@ manager.stop( )
 # col  -> column
 # val  -> value
 # lbl  -> label
-# del  -> delete
+# del  -> insert
 # prj  -> project
 # brd  -> board
 # crnt -> current
