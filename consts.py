@@ -1,7 +1,7 @@
 import bz2
 
 DBG                     = 1
-PROJECTS_FOLDER         = "User_Projects"
+# PROJECTS_FOLDER         = "User_Projects"
 PROJECT_PREFIX          = "project_"
 ALLOWED_CHARS           = [ chr( ord( 'a' ) + i ) for i in range( 26 ) ] + [ chr( ord( 'A' ) + i ) for i in range( 26 ) ] + [ str( i ) for i in range( 10 ) ] + [ "_" ]
 NEW_PROJECT_FORM        = 1

@@ -1055,7 +1055,7 @@ for project in manager.get_all_projects( ):
         tree_v.insert( 'p' + project, 'end', iid=( str( board[ 0 ] ) + " " + str( project ) ), text=board[ 1 ] )
 
 
-manager.stop( )
+# manager.stop( )
 
 # place widgets in the left frame
 tree_v.pack( expand=True, fill="both" )

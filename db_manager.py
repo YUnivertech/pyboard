@@ -1,13 +1,9 @@
 import os
-import sqlite3
+import mysql.connector
 
 import send2trash
 
 import consts
-
-if not os.path.isdir( consts.PROJECTS_FOLDER ):
-    os.mkdir( consts.PROJECTS_FOLDER )
-
 
 class DBManager:
 
@@ -16,24 +12,29 @@ class DBManager:
         self.conn   = None
         self.cursor = None
 
-        self.get_active_project = lambda: self.db[ len( consts.PROJECTS_FOLDER ) + 1 + len( consts.PROJECT_PREFIX ):-3 ]
-
     def connect( self, _username, _hostname, _password ):
-        print( "Connecting to {}@{} {}".format( _username, _hostname, _password ) )
+        try:
+            self.conn = mysql.connector.connect( host=_hostname, user=_username, passwd=_password )
+        except Exception as e:
+            print( "Something went wrong please try again" )
+        if self.conn and self.conn.is_connected( ):
+            print( "Successfully Connected to MySQL database" )
+        else:
+            print( "Failed to connect to MySQL database" )
+        self.cursor = self.conn.cursor( )
+        print(self.cursor)
+        print( "Connecting to {}@{} {}".format( _hostname, _username, _password ) )
 
     def use_project( self, _project_name ):
-        self.stop( )
-        projects      = os.listdir( consts.PROJECTS_FOLDER )
-        _project_name = consts.PROJECT_PREFIX + _project_name
-        db_exists     = ( _project_name + ".db" ) in projects
+        projects      = self.get_all_projects( )
+        project_name  = consts.PROJECT_PREFIX + _project_name
+        db_exists     = _project_name in projects
         if not db_exists:
             raise FileNotFoundError( "DB does not exist" )
             # return False
         else:
-            self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
-            self.conn   = sqlite3.connect( self.db )
-            self.conn.execute( "PRAGMA foreign_keys = 1" )  # Only for SQLite as foreign key check is disabled by default in SQLite
-            self.cursor = self.conn.cursor( )
+            self.db = project_name
+            self.cursor.execute( "USE " + self.db + ";" )
         # return True
 
     def get_next_board_uid( self ):
@@ -51,47 +52,49 @@ class DBManager:
         return next_card_uid
 
     def add_project( self, _project_name, _project_description ):
-        projects = os.listdir( consts.PROJECTS_FOLDER )
-        _project_name = consts.PROJECT_PREFIX + _project_name
-        db_exists = ( _project_name + ".db" ) in projects
+        projects = self.get_all_projects( )
+        print(projects)
+        project_name = consts.PROJECT_PREFIX + _project_name
+        db_exists = _project_name in projects
         if db_exists:
             raise FileExistsError( "DB already exists" )
             # return False
         else:
-            self.db     = consts.PROJECTS_FOLDER + "/" + _project_name + ".db"
-            self.conn   = sqlite3.connect( self.db )
-            self.conn.execute( "PRAGMA foreign_keys = 1" )  # Only for SQLite as foreign key check is disabled by default in SQLite
-            self.cursor = self.conn.cursor( )
-            self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Cards'"
+            self.db     = project_name
+            self.cursor.execute( "CREATE DATABASE " + self.db + ";" )
+            self.cursor.execute( "USE " + self.db + ";" )
+            self.cursor.execute( "CREATE TABLE IF NOT EXISTS Cards"
                                     "( "
-                                        "'uid' UNSIGNED BIGINT PRIMARY KEY, "
-                                        "'name' TEXT, 'description' TEXT, "
-                                        "'color' TEXT "
+                                        "uid INT PRIMARY KEY, "
+                                        "name TEXT, "
+                                        "description TEXT, "
+                                        "color TEXT "
                                     ");" )
-            self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Boards'"
+            self.cursor.execute( "CREATE TABLE IF NOT EXISTS `Boards`"
                                     "( "
-                                        "'uid' UNSIGNED BIGINT PRIMARY KEY, "
-                                        "'name' TEXT, "
-                                        "'description' TEXT "
+                                        "uid INT PRIMARY KEY, "
+                                        "name TEXT, "
+                                        "description TEXT "
                                     ");" )
-            self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Relations'"
+            self.cursor.execute( "CREATE TABLE IF NOT EXISTS `Relations`"
                                     "( "
-                                        "'board_uid' UNSIGNED BIGINT, "
-                                        "'tag_name' TEXT, 'tag_value' TEXT, "
-                                        "'card_uid' UNSIGNED BIGINT, "
-                                        "UNIQUE( 'board_uid', 'tag_name', 'card_uid' ), "
+                                        "board_uid INT, "
+                                        "tag_name VARCHAR(255), "
+                                        "tag_value TEXT, "
+                                        "card_uid INT, "
+                                        "UNIQUE( board_uid, tag_name, card_uid ), "
                                         "FOREIGN KEY( card_uid ) REFERENCES Cards( uid ) ON DELETE CASCADE, "
                                         "FOREIGN KEY( board_uid ) REFERENCES Boards( uid ) ON DELETE CASCADE "
                                     ");" )
-            self.cursor.execute( "CREATE TABLE IF NOT EXISTS 'Info'"
+            self.cursor.execute( "CREATE TABLE IF NOT EXISTS Info"
                                     "( "
-                                        "'project_info' TEXT, "
-                                        "'board_last_used_uid' UNSIGNED BIGINT, "
-                                        "'card_last_used_uid' UNSIGNED BIGINT "
+                                        "project_info TEXT, "
+                                        "board_last_used_uid INT, "
+                                        "card_last_used_uid INT "
                                     ");" )
             self.cursor.execute( "INSERT INTO `Info` "
                                     "( `project_info`, `board_last_used_uid`, `card_last_used_uid` ) "
-                                    "VALUES ( ?, '0', '0' );",
+                                    "VALUES ( %s, '0', '0' );",
                                     ( _project_description, ) )
             self.conn.commit( )
 
@@ -99,151 +102,151 @@ class DBManager:
         consts.dbg( 1, "Class DBManager - function add_board - value of _board_uid:", _board_uid )
         self.cursor.execute( "INSERT INTO `Boards` "
                                 "( `uid`, `name`, `description` ) "
-                                "VALUES ( ?, ?, ? );",
+                                "VALUES ( %s, %s, %s );",
                                 ( _board_uid, _board_name, _board_description ) )
-        self.cursor.execute( "UPDATE `Info` SET `board_last_used_uid` = ?;", ( _board_uid, ) )
+        self.cursor.execute( "UPDATE `Info` SET `board_last_used_uid` = %s;", ( _board_uid, ) )
         self.conn.commit( )
 
     def add_card( self, _card_uid, _card_name, _card_description, _card_color ):
         consts.dbg( 1, "Class DBManager - function add_card - value of _card_uid:", _card_uid )
         self.cursor.execute( "INSERT INTO `Cards` "
                                 "( `uid`, `name`, `description`, `color` ) "
-                                "VALUES ( ?, ?, ?, ? );",
+                                "VALUES ( %s, %s, %s, %s );",
                                 ( _card_uid, _card_name, _card_description, _card_color ) )
         self.cursor.execute( "UPDATE `Info` "
-                                "SET `card_last_used_uid` = ?;",
+                                "SET `card_last_used_uid` = %s;",
                                 ( _card_uid, ) )
         self.conn.commit( )
 
     def add_card_to_board( self, _board_uid, _card_uid ):
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `card_uid` ) "
-                                "VALUES ( ?, ? );",
+                                "VALUES ( %s, %s );",
                                 ( _board_uid, _card_uid ) )
         self.conn.commit( )
 
     def add_card_tag( self, _board_uid, _card_uid, _tag_name, _tag_value ):
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `card_uid`, `tag_name`, `tag_value` ) "
-                                "VALUES ( ?, ?, ?, ? );",
+                                "VALUES ( %s, %s, %s, %s );",
                                 ( _board_uid, _card_uid, _tag_name, _tag_value ) )
         self.conn.commit( )
 
     def add_card_tag_name( self, _board_uid, _card_uid, _tag_name ):
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `card_uid`, `tag_name` ) "
-                                "VALUES ( ?, ?, ? );",
+                                "VALUES ( %s, %s, %s );",
                                 ( _board_uid, _card_uid, _tag_name ) )
         self.conn.commit( )
 
     def make_tag_value_permanent( self, _board_uid, _tag_name, _tag_value ):
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `tag_name`, `tag_value` ) "
-                                "VALUES ( ?, ?, ? );",
+                                "VALUES ( %s, %s, %s );",
                                 ( _board_uid, _tag_name, _tag_value ) )
         self.conn.commit( )
 
     def make_tag_value_temporary( self, _board_uid, _tag_name, _tag_value ):
         self.cursor.execute( "DELETE FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `tag_name` = ? AND `tag_value` = ? AND `card_uid` is NULL;",
+                                "WHERE `board_uid` = %s AND `tag_name` = %s AND `tag_value` = %s AND `card_uid` is NULL;",
                                 ( _board_uid, _tag_name, _tag_value ) )
         self.conn.commit( )
 
     def update_project_info( self, _project_info ):
         self.cursor.execute( "UPDATE `Info` "
-                                "SET `project_info` = ?;",
+                                "SET `project_info` = %s;",
                                 ( _project_info, ) )
         self.conn.commit( )
 
     def update_board( self, _board_uid, _board_name, _board_description ):
         self.cursor.execute( "UPDATE `Boards` "
-                                "SET `name` = ?, `description` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `name` = %s, `description` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _board_name, _board_description, _board_uid ) )
         self.conn.commit( )
 
     def update_board_name( self, _board_uid, _board_name ):
         self.cursor.execute( "UPDATE `Boards` "
-                                "SET `name` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `name` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _board_name, _board_uid ) )
         self.conn.commit( )
 
     def update_board_description( self, _board_uid, _board_description ):
         self.cursor.execute( "UPDATE `Boards` "
-                                "SET `description` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `description` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _board_description, _board_uid ) )
         self.conn.commit( )
 
     def update_card( self, _card_uid, _card_name, _card_description, _card_color ):
         self.cursor.execute( "UPDATE `Cards` "
-                                "SET `name` = ?, `description` = ?, `color` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `name` = %s, `description` = %s, `color` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _card_name, _card_description, _card_color, _card_uid ) )
         self.conn.commit( )
 
     def update_card_name( self, _card_uid, _card_name ):
         self.cursor.execute( "UPDATE `Cards` "
-                                "SET `name` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `name` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _card_name, _card_uid ) )
         self.conn.commit( )
 
     def update_card_description( self, _card_uid, _card_description ):
         self.cursor.execute( "UPDATE `Cards` "
-                                "SET `description` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `description` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _card_description, _card_uid ) )
         self.conn.commit( )
 
     def update_card_color( self, _card_uid, _card_color ):
         self.cursor.execute( "UPDATE `Cards` "
-                                "SET `color` = ? "
-                                "WHERE `uid` = ?;",
+                                "SET `color` = %s "
+                                "WHERE `uid` = %s;",
                                 ( _card_color, _card_uid ) )
         self.conn.commit( )
 
     def update_card_tag( self, _board_uid, _card_uid, _new_tag_name, _new_tag_value, _prev_tag_name ):
         self.cursor.execute( "UPDATE `Relations` "
-                                "SET `tag_name` = ?, `tag_value` = ? "
-                                "WHERE `board_uid` = ? AND `tag_name` = ? AND `card_uid` = ?;",
+                                "SET `tag_name` = %s, `tag_value` = %s "
+                                "WHERE `board_uid` = %s AND `tag_name` = %s AND `card_uid` = %s;",
                                 ( _new_tag_name, _new_tag_value, _board_uid, _prev_tag_name, _card_uid ) )
         self.conn.commit( )
 
     def update_card_tag_name( self, _board_uid, _card_uid, _new_tag_name, _prev_tag_name ):
         self.cursor.execute( "UPDATE `Relations` "
-                                "SET `tag_name` = ? "
-                                "WHERE `board_uid` = ? AND `tag_name` = ? AND `card_uid` = ?;",
+                                "SET `tag_name` = %s "
+                                "WHERE `board_uid` = %s AND `tag_name` = %s AND `card_uid` = %s;",
                                 ( _new_tag_name, _board_uid, _prev_tag_name, _card_uid ) )
         self.conn.commit( )
 
     def update_card_tag_value( self, _board_uid, _card_uid, _tag_name, _tag_value ):
         self.cursor.execute( "UPDATE `Relations` "
-                                "SET `tag_value` = ? "
-                                "WHERE `board_uid` = ? AND `tag_name` = ? AND `card_uid` = ?;",
+                                "SET `tag_value` = %s "
+                                "WHERE `board_uid` = %s AND `tag_name` = %s AND `card_uid` = %s;",
                                 ( _tag_value, _board_uid, _tag_name, _card_uid ) )
         self.conn.commit( )
 
     def update_tag_name( self, _board_uid, _new_tag_name, _prev_tag_name ):
         self.cursor.execute( "UPDATE `Relations` "
-                                "SET `tag_name` = ? "
-                                "WHERE `board_uid` = ? AND `tag_name` = ?;",
+                                "SET `tag_name` = %s "
+                                "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _new_tag_name, _board_uid, _prev_tag_name ) )
         self.conn.commit( )
 
     def update_tag_value( self, _board_uid, _new_tag_value, _prev_tag_value, _tag_name ):
         self.cursor.execute( "UPDATE `Relations` "
-                                "SET `tag_value` = ? "
-                                "WHERE `board_uid` = ? AND `tag_name` = ? AND `tag_value` = ?;",
+                                "SET `tag_value` = %s "
+                                "WHERE `board_uid` = %s AND `tag_name` = %s AND `tag_value` = %s;",
                                 ( _new_tag_value, _board_uid, _tag_name, _prev_tag_value ) )
         self.conn.commit( )
 
     def delete_project( self, _project_name ):
-        db = consts.PROJECTS_FOLDER + "/" + consts.PROJECT_PREFIX + _project_name + ".db"
+        db = consts.PROJECT_PREFIX + _project_name
         if db == self.db:
             self.stop( )
-        send2trash.send2trash( db )
+        self.cursor.execute( "DROP DATABASE IF EXISTS " + db + ";" )
 
     def delete_current_project( self ):
         db = self.db
@@ -252,44 +255,51 @@ class DBManager:
 
     def delete_board( self, _board_uid ):
         self.cursor.execute( "DELETE FROM `Boards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
         self.conn.commit( )
 
     def delete_card( self, _card_uid ):
         self.cursor.execute( "DELETE FROM `Cards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
         self.conn.commit( )
 
     def delete_card_tag( self, _board_uid, _card_uid, _tag_name ):
         self.cursor.execute( "DELETE FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `card_uid` = ? AND `tag_name` = ?;",
+                                "WHERE `board_uid` = %s AND `card_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _card_uid, _tag_name ) )
         self.conn.commit( )
 
     def delete_board_tag( self, _board_uid, _tag_name ):
         self.cursor.execute( "DELETE FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `tag_name` = ?;",
+                                "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _tag_name ) )
         self.conn.commit( )
 
     def delete_tag_value( self, _board_uid, _tag_name, _tag_value ):
         self.cursor.execute( "DELETE FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `tag_name` = ? AND `tag_value` = ?;",
+                                "WHERE `board_uid` = %s AND `tag_name` = %s AND `tag_value` = %s;",
                                 ( _board_uid, _tag_name, _tag_value ) )
         self.conn.commit( )
 
     def remove_card_from_board( self, _board_uid, _card_uid ):
         self.cursor.execute( "DELETE FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `card_uid` = ?;",
+                                "WHERE `board_uid` = %s AND `card_uid` = %s;",
                                 ( _board_uid, _card_uid ) )
         self.conn.commit( )
 
     def get_all_projects( self ):
-        projects      = os.listdir( consts.PROJECTS_FOLDER )
-        _len          = len( consts.PROJECT_PREFIX )
-        project_names = list( map( lambda e: e[ _len:-3:1 ], projects ) )
+        print(self.conn.cursor( ))
+        self.cursor.execute( "SHOW DATABASES;" )
+        fetched_data = self.cursor.fetchall( )
+        projects = [ ]
+        for row in fetched_data:
+            if row[ 0 ].startswith( consts.PROJECT_PREFIX ):
+                projects.append( row[ 0 ] )
+        _len = len( consts.PROJECT_PREFIX )
+        project_names = list( map( lambda e: e[ _len:: ], projects ) )
+        print(project_names)
         consts.dbg( 1, "Class DBManager - function get_all_projects - value of project_names:", project_names )
         return project_names
 
@@ -302,14 +312,14 @@ class DBManager:
 
     def get_board_grouped_cards( self, _board_uid, _tag_name ):
         self.cursor.execute( "SELECT DISTINCT `tag_value` FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `tag_name` = ?;",
+                                "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _tag_name ) )
         fetched_data  = self.cursor.fetchall( )
         grouped_cards = { }
         print(fetched_data)
         for i in fetched_data:
             self.cursor.execute( "SELECT `Cards`.`uid`, `Cards`.`name`, `Cards`.`description`, `Cards`.`color` FROM `Cards`, `Relations` "
-                                    "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = ? AND `Relations`.`tag_name` = ? AND `Relations`.`tag_value` = ?;",
+                                    "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = %s AND `Relations`.`tag_name` = %s AND `Relations`.`tag_value` = %s;",
                                     ( _board_uid, _tag_name, i[ 0 ] ) )
             fetched_data_2 = self.cursor.fetchall( )
             cards = fetched_data_2
@@ -320,7 +330,7 @@ class DBManager:
 
     def get_board( self, _board_uid ):
         self.cursor.execute( "SELECT `name`, `description` FROM `Boards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
         fetched_data = self.cursor.fetchall( )
         board        = fetched_data[ 0 ]
@@ -329,7 +339,7 @@ class DBManager:
 
     def get_board_name( self, _board_uid ):
         self.cursor.execute( "SELECT `name` FROM `Boards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
         fetched_data = self.cursor.fetchall( )
         board_name   = fetched_data[ 0 ][ 0 ]
@@ -338,7 +348,7 @@ class DBManager:
 
     def get_board_description( self, _board_uid ):
         self.cursor.execute( "SELECT `description` FROM `Boards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
         fetched_data      = self.cursor.fetchall( )
         board_description = fetched_data[ 0 ][ 0 ]
@@ -363,7 +373,7 @@ class DBManager:
 
     def get_board_tag_names( self, _board_uid ):
         self.cursor.execute( "SELECT DISTINCT `tag_name` FROM `Relations` "
-                                "WHERE `board_uid` = ?;",
+                                "WHERE `board_uid` = %s;",
                                 ( _board_uid, ) )
         fetched_data = self.cursor.fetchall( )
         tag_names    = [ ]
@@ -374,7 +384,7 @@ class DBManager:
 
     def get_tag_values_of_tag_key( self, _board_uid, _tag_name ):
         self.cursor.execute( "SELECT DISTINCT `tag_value` FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `tag_name` = ?;",
+                                "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _tag_name ) )
         fetched_data  = self.cursor.fetchall( )
         tag_values    = [ ]
@@ -385,7 +395,7 @@ class DBManager:
 
     def get_card( self, _card_uid ):
         self.cursor.execute( "SELECT `name`, `description`, `color` FROM `Cards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
         fetched_data = self.cursor.fetchall( )
         card         = fetched_data[ 0 ]
@@ -394,7 +404,7 @@ class DBManager:
 
     def get_card_name( self, _card_uid ):
         self.cursor.execute( "SELECT `name`, FROM `Cards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
         fetched_data = self.cursor.fetchall( )
         card_name    = fetched_data[ 0 ][ 0 ]
@@ -403,7 +413,7 @@ class DBManager:
 
     def get_card_description( self, _card_uid ):
         self.cursor.execute( "SELECT `description` FROM `Cards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
         fetched_data     = self.cursor.fetchall( )
         card_description = fetched_data[ 0 ][ 0 ]
@@ -412,7 +422,7 @@ class DBManager:
 
     def get_card_color( self, _card_uid ):
         self.cursor.execute( "SELECT `color` FROM `Cards` "
-                                "WHERE `uid` = ?;",
+                                "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
         fetched_data = self.cursor.fetchall( )
         card_color = fetched_data[ 0 ][ 0 ]
@@ -421,7 +431,7 @@ class DBManager:
 
     def get_cards_uid_in_board( self, _board_uid ):
         self.cursor.execute( "SELECT DISTINCT `card_uid` FROM `Relations` "
-                                "WHERE `board_uid` = ? AND `tag_name` is NULL;",
+                                "WHERE `board_uid` = %s AND `tag_name` is NULL;",
                                 ( _board_uid, ) )
         fetched_data = self.cursor.fetchall( )
         cards_uid    = [ ]
@@ -432,7 +442,7 @@ class DBManager:
 
     def get_cards_in_board( self, _board_uid ):
         self.cursor.execute( "SELECT DISTINCT `Cards`.`uid`, `Cards`.`name`, `Cards`.`description`, `Cards`.`color` FROM `Cards`, `Relations` "
-                                "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = ?;",
+                                "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = %s;",
                                 ( _board_uid, ) )
         fetched_data   = self.cursor.fetchall( )
         cards_in_board = fetched_data
@@ -441,7 +451,7 @@ class DBManager:
 
     def get_card_tags( self, _board_uid, _card_uid ):
         self.cursor.execute( "SELECT `tag_name`, `tag_value` FROM `Relations` "
-                                "WHERE `board_uid` = ? And `card_uid` = ?;",
+                                "WHERE `board_uid` = %s And `card_uid` = %s;",
                                 ( _board_uid, _card_uid ) )
         fetched_data = self.cursor.fetchall( )
         tags         = fetched_data
@@ -469,7 +479,7 @@ class DBManager:
 
     def get_boards_of_card( self, _card_uid ):
         self.cursor.execute( "SELECT `board_uid` FROM `Relations` "
-                                "WHERE `card_uid` = ?;",
+                                "WHERE `card_uid` = %s;",
                                 ( _card_uid, ) )
         fetched_data = self.cursor.fetchall( )
         board_uids       = set( )
