@@ -17,13 +17,19 @@ class DBManager:
             self.conn = mysql.connector.connect( host=_hostname, user=_username, passwd=_password )
         except Exception as e:
             print( "Something went wrong please try again" )
+            return False
+
         if self.conn and self.conn.is_connected( ):
             print( "Successfully Connected to MySQL database" )
         else:
             print( "Failed to connect to MySQL database" )
+            return False
+
         self.cursor = self.conn.cursor( )
         print(self.cursor)
         print( "Connecting to {}@{} {}".format( _hostname, _username, _password ) )
+
+        return True
 
     def use_project( self, _project_name ):
         projects      = self.get_all_projects( )

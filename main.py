@@ -599,8 +599,11 @@ def generate_column( _name, _cards, _cards_frame ):
 
 def connect( _username, _hostname, _password ):
     global prompt_closed, prompt
-    manager.connect( _username, _hostname, _password )
+    is_connected = manager.connect( _username, _hostname, _password )
     prompt_closed = True
+
+    if not is_connected:
+        prompt_closed = False
 
 def tree_click( _event ):
 
