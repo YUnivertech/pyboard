@@ -86,9 +86,9 @@ class AddProjectForm( ttk.LabelFrame ):
         global current_state, previous_state, manager, tree_v
 
         # get name and description as entered by user and clear text boxes
-        name = self.name_entry.get( )
+        name = self.name_entry.get( ).strip( )
         self.name_entry.insert( 0, '' )
-        desc = self.description_entry.get( )
+        desc = self.description_entry.get( ).strip( )
         self.description_entry.insert( 0, '' )
 
         try:
@@ -147,7 +147,7 @@ class EditProjectForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         # update the description
-        manager.update_project_info( self.description_entry.get( ) )
+        manager.update_project_info( self.description_entry.get( ).strip( ) )
 
         # clear entries
         self.name_entry.config( state='normal' )
@@ -195,9 +195,9 @@ class AddBoardForm( ttk.LabelFrame ):
         global current_state, previous_state
 
         # get name, description and iid as entered by user and clear text boxes
-        name = self.name_entry.get( )
+        name = self.name_entry.get( ).strip( )
         self.name_entry.insert( 0, '' )
-        desc = self.description_entry.get( )
+        desc = self.description_entry.get( ).strip( )
         self.description_entry.insert( 0, '' )
         iid = manager.get_next_board_uid( )
 
@@ -260,8 +260,8 @@ class EditBoardForm( ttk.LabelFrame ):
     def confirm( self ):
         global current_state, previous_state
 
-        name = self.name_entry.get( )
-        desc = self.description_entry.get( )
+        name = self.name_entry.get( ).strip( )
+        desc = self.description_entry.get( ).strip( )
         iid = int( current_state[ 1 ] )
 
         existing_boards = set( map( lambda event: event[ 1 ], manager.get_all_boards( ) ) )
@@ -335,9 +335,9 @@ class AddCardForm( ttk.LabelFrame ):
         global current_state, previous_state, board_checkbox_states, boards, manager
 
         # get name, description and iid as entered by user and clear text boxes
-        name = self.name_entry.get( )
+        name = self.name_entry.get( ).strip( )
         self.name_entry.insert( 0, '' )
-        desc = self.description_entry.get( )
+        desc = self.description_entry.get( ).strip ( )
         self.description_entry.insert( 0, '' )
         iid = manager.get_next_card_uid( )
 
@@ -404,7 +404,7 @@ class EditProjectCardForm( ttk.LabelFrame ):
         global board_checkbox_states, boards
 
         edit_card_flag = False
-        manager.update_card( edit_card_uid, self.name_entry.get( ), self.desc_entry.get( ), None )
+        manager.update_card( edit_card_uid, self.name_entry.get( ).strip( ), self.desc_entry.get( ).strip( ), None )
         valid_boards = manager.get_boards_of_card( edit_card_uid )
 
         for (state, board) in zip( board_checkbox_states, boards ):
@@ -505,7 +505,7 @@ class EditBoardCardForm( ttk.LabelFrame ):
         global edit_card_flag, edit_card_uid
 
         edit_card_flag = False
-        manager.update_card( edit_card_uid, self.name_entry.get( ), self.desc_entry.get( ), None )
+        manager.update_card( edit_card_uid, self.name_entry.get( ).strip( ), self.desc_entry.get( ).strip( ), None )
 
         for tag, entry in tag_dict.items( ):
             new_val = entry.get( ).strip( )
@@ -525,8 +525,8 @@ class EditBoardCardForm( ttk.LabelFrame ):
 
         global edit_card_flag
 
-        tag_name = self.tag_key_entry.get( )
-        tag_value = self.tag_val_entry.get( )
+        tag_name = self.tag_key_entry.get( ).strip( )
+        tag_value = self.tag_val_entry.get( ).strip( )
 
         manager.add_card_tag( current_state[ 1 ], edit_card_uid, tag_name, tag_value )
 
@@ -542,7 +542,7 @@ class EditBoardCardForm( ttk.LabelFrame ):
 
         global edit_card_flag
 
-        tag_name = self.tag_key_entry.get( )
+        tag_name = self.tag_key_entry.get( ).strip( )
 
         manager.delete_card_tag( current_state[ 1 ], edit_card_uid, tag_name )
 
