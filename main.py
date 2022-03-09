@@ -1,5 +1,8 @@
+#!/bin/python
+
 import tkinter as tk
 from tkinter import ttk
+from tkinter import tix
 
 import consts
 import db_manager
@@ -603,6 +606,9 @@ def tree_click( _event ):
 
     global current_state, previous_state
 
+    if not len( tree_v.selection ( ) ):
+        return
+
     iid  = tree_v.selection( )[ 0 ]
 
     if iid[ 0 ] == 'p':
@@ -1009,6 +1015,8 @@ for project in manager.get_all_projects( ):
     manager.use_project( project )
     for board in manager.get_all_boards( ):
         tree_v.insert( 'p' + project, 'end', iid=( str( board[ 0 ] ) + " " + str( project ) ), text=board[ 1 ] )
+
+
 manager.stop( )
 
 # place widgets in the left frame
