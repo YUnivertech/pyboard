@@ -1005,7 +1005,7 @@ edit_project_card = EditProjectCardForm( main_frame )
 edit_board_card   = EditBoardCardForm( main_frame )
 
 new_project_button                  = ttk.Button( top_frame, text="new project", command=add_project_init )
-delete_project_button               = ttk.Button( top_frame, text="insert project", command=delete_project_confirm )
+delete_project_button               = ttk.Button( top_frame, text="delete project", command=delete_project_confirm )
 edit_project_button                 = ttk.Button( top_frame, text="edit project", command=edit_project_init )
 new_board_button                    = ttk.Button( top_frame, text="new board", command=add_board_init )
 delete_board_button                 = ttk.Button( top_frame, text="insert board", command=delete_board_confirm )
