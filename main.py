@@ -824,7 +824,7 @@ def update_state( _root_window ):
 prompt                      = tk.Tk( )
 prompt.title( "Pyboard" )
 prompt.minsize( 250, 150 )
-prompt.tk.call("source", "sun-valley.tcl")
+prompt.tk.call("source", "Sun-Valley-ttk-theme/sun-valley.tcl")
 prompt.tk.call("set_theme", "light")
 
 prompt_frame                        = ttk.LabelFrame( prompt, text="Prompt frame", padding=( 5, 5, 5, 5 ) )
@@ -871,7 +871,7 @@ except Exception as e:
 root = tk.Tk( )
 root.title( "Pyboard" )
 root.minsize( 250, 150 )
-root.tk.call("source", "sun-valley.tcl")
+root.tk.call("source", "Sun-Valley-ttk-theme/sun-valley.tcl")
 root.tk.call("set_theme", "light")
 
 s = ttk.Style( )
