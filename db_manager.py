@@ -32,15 +32,15 @@ class DBManager:
         return True
 
     def use_project( self, _project_name ):
-        projects      = self.get_all_projects( )
-        project_name  = consts.PROJECT_PREFIX + _project_name
-        db_exists     = _project_name in projects
+        projects     = self.get_all_projects( )
+        project_name = consts.PROJECT_PREFIX + _project_name
+        db_exists    = _project_name in projects
         if not db_exists:
             raise FileNotFoundError( "DB does not exist" )
             # return False
         else:
             self.db = project_name
-            self.cursor.execute( "USE " + self.db + ";" )
+            self.cursor.execute( "USE `" + self.db + "`;" )
         # return True
 
     def get_next_board_uid( self ):
@@ -67,8 +67,9 @@ class DBManager:
             # return False
         else:
             self.db     = project_name
-            self.cursor.execute( "CREATE DATABASE " + self.db + ";" )
-            self.cursor.execute( "USE " + self.db + ";" )
+            print("\t\t\t", self.db)
+            self.cursor.execute( "CREATE DATABASE `" + self.db + "`;" )
+            self.cursor.execute( "USE `" + self.db + "`;" )
             self.cursor.execute( "CREATE TABLE IF NOT EXISTS Cards"
                                     "( "
                                         "uid INT PRIMARY KEY, "
@@ -250,14 +251,13 @@ class DBManager:
 
     def delete_project( self, _project_name ):
         db = consts.PROJECT_PREFIX + _project_name
-        if db == self.db:
-            self.stop( )
-        self.cursor.execute( "DROP DATABASE IF EXISTS " + db + ";" )
+        self.cursor.execute( "DROP DATABASE IF EXISTS `" + db + "`;" )
 
     def delete_current_project( self ):
         db = self.db
-        self.stop( )
-        send2trash.send2trash( db )
+        # self.stop( )
+        # send2trash.send2trash( db )
+        self.cursor.execute( "DROP DATABASE IF EXISTS `" + db + "`;" )
 
     def delete_board( self, _board_uid ):
         self.cursor.execute( "DELETE FROM `Boards` "
@@ -495,7 +495,7 @@ class DBManager:
         return board_uids
 
     def stop( self ):
-        self.db = None
+        self.db     = None
         self.cursor = None
         if self.conn:
             self.conn.close( )
