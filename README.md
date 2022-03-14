@@ -56,3 +56,7 @@ When run for the first time, the home screen will be blank. Create a new project
 - [ ] Add markdown (especially emoji) support
 - [ ] Git, GitHub, Gitlab integration
 - [ ] Issue in issue like in jira (epic -> story -> task)
+
+## Credits
+
+The TKinter theme used in this project was taken from here https://github.com/rdbende/Sun-Valley-ttk-theme
