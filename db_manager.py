@@ -6,13 +6,27 @@ import send2trash
 import consts
 
 class DBManager:
+    """_summary_
+    """
+
 
     def __init__( self ):
+        """_summary_
+        """
+
         self.db     = None
         self.conn   = None
         self.cursor = None
 
     def connect( self, _username, _hostname, _password ):
+        """_summary_
+
+        Args:
+            _username (_type_): _description_
+            _hostname (_type_): _description_
+            _password (_type_): _description_
+        """
+
         try:
             self.conn = mysql.connector.connect( host=_hostname, user=_username, passwd=_password )
         except Exception as e:
@@ -32,6 +46,12 @@ class DBManager:
         return True
 
     def use_project( self, _project_name ):
+        """_summary_
+
+        Args:
+            _project_name (_type_): _description_
+        """
+
         projects     = self.get_all_projects( )
         project_name = consts.PROJECT_PREFIX + _project_name
         db_exists    = _project_name in projects
@@ -44,6 +64,12 @@ class DBManager:
         # return True
 
     def get_next_board_uid( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `board_last_used_uid` FROM `Info`;" )
         fetched_data   = self.cursor.fetchall( )
         next_board_uid = fetched_data[ 0 ][ 0 ] + 1
@@ -51,6 +77,14 @@ class DBManager:
         return next_board_uid
 
     def get_next_card_uid( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
+        
+
         self.cursor.execute( "SELECT `card_last_used_uid` FROM `Info`;" )
         fetched_data  = self.cursor.fetchall( )
         next_card_uid = fetched_data[ 0 ][ 0 ] + 1
@@ -58,6 +92,13 @@ class DBManager:
         return next_card_uid
 
     def add_project( self, _project_name, _project_description ):
+        """_summary_
+
+        Args:
+            _project_name (_type_): _description_
+            _project_description (_type_): _description_
+        """
+
         projects = self.get_all_projects( )
         print(projects)
         project_name = consts.PROJECT_PREFIX + _project_name
@@ -106,6 +147,14 @@ class DBManager:
             self.conn.commit( )
 
     def add_board( self, _board_uid, _board_name, _board_description ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _board_name (_type_): _description_
+            _board_description (_type_): _description_
+        """
+
         consts.dbg( 1, "Class DBManager - function add_board - value of _board_uid:", _board_uid )
         self.cursor.execute( "INSERT INTO `Boards` "
                                 "( `uid`, `name`, `description` ) "
@@ -115,6 +164,15 @@ class DBManager:
         self.conn.commit( )
 
     def add_card( self, _card_uid, _card_name, _card_description, _card_color ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+            _card_name (_type_): _description_
+            _card_description (_type_): _description_
+            _card_color (_type_): _description_
+        """
+
         consts.dbg( 1, "Class DBManager - function add_card - value of _card_uid:", _card_uid )
         self.cursor.execute( "INSERT INTO `Cards` "
                                 "( `uid`, `name`, `description`, `color` ) "
@@ -126,6 +184,13 @@ class DBManager:
         self.conn.commit( )
 
     def add_card_to_board( self, _board_uid, _card_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+        """
+
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `card_uid` ) "
                                 "VALUES ( %s, %s );",
@@ -133,6 +198,15 @@ class DBManager:
         self.conn.commit( )
 
     def add_card_tag( self, _board_uid, _card_uid, _tag_name, _tag_value ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+            _tag_name (_type_): _description_
+            _tag_value (_type_): _description_
+        """
+
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `card_uid`, `tag_name`, `tag_value` ) "
                                 "VALUES ( %s, %s, %s, %s );",
@@ -140,6 +214,15 @@ class DBManager:
         self.conn.commit( )
 
     def add_card_tag_name( self, _board_uid, _card_uid, _tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+            _tag_name (_type_): _description_
+        """
+
+
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `card_uid`, `tag_name` ) "
                                 "VALUES ( %s, %s, %s );",
@@ -147,6 +230,14 @@ class DBManager:
         self.conn.commit( )
 
     def make_tag_value_permanent( self, _board_uid, _tag_name, _tag_value ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _tag_name (_type_): _description_
+            _tag_value (_type_): _description_            
+        """
+
         self.cursor.execute( "INSERT INTO `Relations` "
                                 "( `board_uid`, `tag_name`, `tag_value` ) "
                                 "VALUES ( %s, %s, %s );",
@@ -154,18 +245,41 @@ class DBManager:
         self.conn.commit( )
 
     def make_tag_value_temporary( self, _board_uid, _tag_name, _tag_value ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _tag_name (_type_): _description_
+            _tag_value (_type_): _description_
+        """
+
+
         self.cursor.execute( "DELETE FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s AND `tag_value` = %s AND `card_uid` is NULL;",
                                 ( _board_uid, _tag_name, _tag_value ) )
         self.conn.commit( )
 
     def update_project_info( self, _project_info ):
+        """_summary_
+
+        Args:
+            _project_info (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Info` "
                                 "SET `project_info` = %s;",
                                 ( _project_info, ) )
         self.conn.commit( )
 
     def update_board( self, _board_uid, _board_name, _board_description ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _board_name (_type_): _description_
+            _board_description (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Boards` "
                                 "SET `name` = %s, `description` = %s "
                                 "WHERE `uid` = %s;",
@@ -173,6 +287,13 @@ class DBManager:
         self.conn.commit( )
 
     def update_board_name( self, _board_uid, _board_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _board_name (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Boards` "
                                 "SET `name` = %s "
                                 "WHERE `uid` = %s;",
@@ -180,6 +301,13 @@ class DBManager:
         self.conn.commit( )
 
     def update_board_description( self, _board_uid, _board_description ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _board_description (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Boards` "
                                 "SET `description` = %s "
                                 "WHERE `uid` = %s;",
@@ -187,6 +315,15 @@ class DBManager:
         self.conn.commit( )
 
     def update_card( self, _card_uid, _card_name, _card_description, _card_color ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+            _card_name (_type_): _description_
+            _card_description (_type_): _description_
+            _card_color (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Cards` "
                                 "SET `name` = %s, `description` = %s, `color` = %s "
                                 "WHERE `uid` = %s;",
@@ -194,6 +331,13 @@ class DBManager:
         self.conn.commit( )
 
     def update_card_name( self, _card_uid, _card_name ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+            _card_name (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Cards` "
                                 "SET `name` = %s "
                                 "WHERE `uid` = %s;",
@@ -201,6 +345,13 @@ class DBManager:
         self.conn.commit( )
 
     def update_card_description( self, _card_uid, _card_description ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+            _card_description (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Cards` "
                                 "SET `description` = %s "
                                 "WHERE `uid` = %s;",
@@ -208,6 +359,13 @@ class DBManager:
         self.conn.commit( )
 
     def update_card_color( self, _card_uid, _card_color ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+            _card_color (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Cards` "
                                 "SET `color` = %s "
                                 "WHERE `uid` = %s;",
@@ -215,6 +373,16 @@ class DBManager:
         self.conn.commit( )
 
     def update_card_tag( self, _board_uid, _card_uid, _new_tag_name, _new_tag_value, _prev_tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+            _new_tag_name (_type_): _description_
+            _new_tag_value (_type_): _description_
+            _prev_tag_name (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Relations` "
                                 "SET `tag_name` = %s, `tag_value` = %s "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s AND `card_uid` = %s;",
@@ -222,6 +390,15 @@ class DBManager:
         self.conn.commit( )
 
     def update_card_tag_name( self, _board_uid, _card_uid, _new_tag_name, _prev_tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+            _new_tag_name (_type_): _description_
+            _prev_tag_name (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Relations` "
                                 "SET `tag_name` = %s "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s AND `card_uid` = %s;",
@@ -229,6 +406,15 @@ class DBManager:
         self.conn.commit( )
 
     def update_card_tag_value( self, _board_uid, _card_uid, _tag_name, _tag_value ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+            _tag_name (_type_): _description_
+            _tag_value (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Relations` "
                                 "SET `tag_value` = %s "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s AND `card_uid` = %s;",
@@ -236,6 +422,14 @@ class DBManager:
         self.conn.commit( )
 
     def update_tag_name( self, _board_uid, _new_tag_name, _prev_tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _new_tag_name (_type_): _description_
+            _prev_tag_name (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Relations` "
                                 "SET `tag_name` = %s "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s;",
@@ -243,6 +437,15 @@ class DBManager:
         self.conn.commit( )
 
     def update_tag_value( self, _board_uid, _new_tag_value, _prev_tag_value, _tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _new_tag_value (_type_): _description_
+            _prev_tag_value (_type_): _description_
+            _tag_name (_type_): _description_
+        """
+
         self.cursor.execute( "UPDATE `Relations` "
                                 "SET `tag_value` = %s "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s AND `tag_value` = %s;",
@@ -250,52 +453,112 @@ class DBManager:
         self.conn.commit( )
 
     def delete_project( self, _project_name ):
+        """_summary_
+
+        Args:
+            _project_name (_type_): _description_
+        """
+
         db = consts.PROJECT_PREFIX + _project_name
         self.cursor.execute( "DROP DATABASE IF EXISTS `" + db + "`;" )
 
     def delete_current_project( self ):
+        """_summary_
+
+        Args:
+            _project_name (_type_): _description_
+        """
+
         db = self.db
         # self.stop( )
         # send2trash.send2trash( db )
         self.cursor.execute( "DROP DATABASE IF EXISTS `" + db + "`;" )
 
     def delete_board( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+        """
+
         self.cursor.execute( "DELETE FROM `Boards` "
                                 "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
         self.conn.commit( )
 
     def delete_card( self, _card_uid ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+        """
+
         self.cursor.execute( "DELETE FROM `Cards` "
                                 "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
         self.conn.commit( )
 
     def delete_card_tag( self, _board_uid, _card_uid, _tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+            _tag_name (_type_): _description_
+        """
+
         self.cursor.execute( "DELETE FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `card_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _card_uid, _tag_name ) )
         self.conn.commit( )
 
     def delete_board_tag( self, _board_uid, _tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _tag_name (_type_): _description_
+        """
+
         self.cursor.execute( "DELETE FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _tag_name ) )
         self.conn.commit( )
 
     def delete_tag_value( self, _board_uid, _tag_name, _tag_value ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _tag_name (_type_): _description_
+            _tag_value (_type_): _description_
+        """
+
         self.cursor.execute( "DELETE FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s AND `tag_value` = %s;",
                                 ( _board_uid, _tag_name, _tag_value ) )
         self.conn.commit( )
 
     def remove_card_from_board( self, _board_uid, _card_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+        """
+
         self.cursor.execute( "DELETE FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `card_uid` = %s;",
                                 ( _board_uid, _card_uid ) )
         self.conn.commit( )
 
     def get_all_projects( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         print(self.conn.cursor( ))
         self.cursor.execute( "SHOW DATABASES;" )
         fetched_data = self.cursor.fetchall( )
@@ -310,6 +573,12 @@ class DBManager:
         return project_names
 
     def get_project_info( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `project_info` FROM `Info`;" )
         fetched_data = self.cursor.fetchall( )
         project_info = fetched_data[ 0 ][ 0 ]
@@ -317,6 +586,16 @@ class DBManager:
         return project_info
 
     def get_board_grouped_cards( self, _board_uid, _tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _tag_name (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT DISTINCT `tag_value` FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _tag_name ) )
@@ -335,6 +614,15 @@ class DBManager:
         return grouped_cards
 
     def get_board( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `name`, `description` FROM `Boards` "
                                 "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
@@ -344,6 +632,15 @@ class DBManager:
         return board
 
     def get_board_name( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `name` FROM `Boards` "
                                 "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
@@ -353,6 +650,15 @@ class DBManager:
         return board_name
 
     def get_board_description( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+        
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `description` FROM `Boards` "
                                 "WHERE `uid` = %s;",
                                 ( _board_uid, ) )
@@ -362,6 +668,12 @@ class DBManager:
         return board_description
 
     def get_all_boards( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_    
+        """
+
         self.cursor.execute( "SELECT * FROM `Boards`;" )
         fetched_data = self.cursor.fetchall( )
         all_boards   = fetched_data
@@ -369,6 +681,12 @@ class DBManager:
         return all_boards
 
     def get_all_boards_uid( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `uid` FROM `Boards`;" )
         fetched_data   = self.cursor.fetchall( )
         all_boards_uid = [ ]
@@ -378,6 +696,15 @@ class DBManager:
         return all_boards_uid
 
     def get_board_tag_names( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT DISTINCT `tag_name` FROM `Relations` "
                                 "WHERE `board_uid` = %s;",
                                 ( _board_uid, ) )
@@ -389,6 +716,16 @@ class DBManager:
         return tag_names
 
     def get_tag_values_of_tag_key( self, _board_uid, _tag_name ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _tag_name (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT DISTINCT `tag_value` FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `tag_name` = %s;",
                                 ( _board_uid, _tag_name ) )
@@ -400,6 +737,15 @@ class DBManager:
         return tag_values
 
     def get_card( self, _card_uid ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `name`, `description`, `color` FROM `Cards` "
                                 "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
@@ -409,6 +755,15 @@ class DBManager:
         return card
 
     def get_card_name( self, _card_uid ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `name`, FROM `Cards` "
                                 "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
@@ -418,6 +773,15 @@ class DBManager:
         return card_name
 
     def get_card_description( self, _card_uid ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `description` FROM `Cards` "
                                 "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
@@ -427,6 +791,15 @@ class DBManager:
         return card_description
 
     def get_card_color( self, _card_uid ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `color` FROM `Cards` "
                                 "WHERE `uid` = %s;",
                                 ( _card_uid, ) )
@@ -436,6 +809,15 @@ class DBManager:
         return card_color
 
     def get_cards_uid_in_board( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT DISTINCT `card_uid` FROM `Relations` "
                                 "WHERE `board_uid` = %s AND `tag_name` is NULL;",
                                 ( _board_uid, ) )
@@ -447,6 +829,15 @@ class DBManager:
         return cards_uid
 
     def get_cards_in_board( self, _board_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT DISTINCT `Cards`.`uid`, `Cards`.`name`, `Cards`.`description`, `Cards`.`color` FROM `Cards`, `Relations` "
                                 "WHERE `Cards`.`uid` = `Relations`.`card_uid` AND `Relations`.`board_uid` = %s;",
                                 ( _board_uid, ) )
@@ -456,6 +847,16 @@ class DBManager:
         return cards_in_board
 
     def get_card_tags( self, _board_uid, _card_uid ):
+        """_summary_
+
+        Args:
+            _board_uid (_type_): _description_
+            _card_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `tag_name`, `tag_value` FROM `Relations` "
                                 "WHERE `board_uid` = %s And `card_uid` = %s;",
                                 ( _board_uid, _card_uid ) )
@@ -465,6 +866,12 @@ class DBManager:
         return tags
 
     def get_all_cards( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT * FROM `Cards`;" )
         fetched_data = self.cursor.fetchall( )
         all_cards    = fetched_data
@@ -472,6 +879,12 @@ class DBManager:
         return all_cards
 
     def get_all_cards_uid( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `uid` FROM `Cards`;" )
         fetched_data  = self.cursor.fetchall( )
         all_cards_uid = [ ]
@@ -481,9 +894,24 @@ class DBManager:
         return all_cards_uid
 
     def get_unused_board_cards( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         pass
 
     def get_boards_of_card( self, _card_uid ):
+        """_summary_
+
+        Args:
+            _card_uid (_type_): _description_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.cursor.execute( "SELECT `board_uid` FROM `Relations` "
                                 "WHERE `card_uid` = %s;",
                                 ( _card_uid, ) )
@@ -495,6 +923,12 @@ class DBManager:
         return board_uids
 
     def stop( self ):
+        """_summary_
+
+        Returns:
+        _type_: _description_
+        """
+
         self.db     = None
         self.cursor = None
         if self.conn:
